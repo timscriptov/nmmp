@@ -1,4 +1,4 @@
-[![](https://jitpack.io/v/TimScriptov/apkparser.svg)](https://jitpack.io/#TimScriptov/apkparser)
+[![](https://jitpack.io/v/TimScriptov/nmmp.svg)](https://jitpack.io/#TimScriptov/nmmp)
 
 ## Add it in your root build.gradle at the end of repositories:
 ```groovy
