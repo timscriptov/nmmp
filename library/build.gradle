@@ -1,0 +1,28 @@
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'kotlin'
+
+dependencies {
+    implementation("com.github.TimScriptov:apkparser:1.7")
+
+    implementation("com.android.tools.smali:smali-dexlib2:3.0.3")
+    implementation("org.jetbrains:annotations:24.0.1")
+    implementation("com.google.guava:guava:31.1-jre")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.ow2.asm:asm:9.5")
+    implementation("com.android.tools:r8:8.0.40")
+    implementation("com.android:zipflinger:8.1.0")
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.java
+                groupId = 'com.mcal'
+                artifactId = 'nmmp'
+                version = "1.0"
+            }
+        }
+    }
+}
