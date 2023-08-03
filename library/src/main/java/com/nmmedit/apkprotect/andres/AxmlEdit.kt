@@ -1,11 +1,11 @@
 package com.nmmedit.apkprotect.andres
 
-import com.mcal.apkparser.xml.ReadManifest
+import com.mcal.apkparser.xml.ManifestParser
 
 object AxmlEdit {
     @JvmStatic
     fun getApplicationName(manifestBytes: ByteArray?): String {
-        val applicationName = ReadManifest(manifestBytes!!).applicationName
+        val applicationName = ManifestParser(manifestBytes!!).applicationName
         return if (applicationName.isNullOrEmpty()) {
             ""
         } else {
@@ -14,8 +14,8 @@ object AxmlEdit {
     }
 
     @JvmStatic
-    fun getMinSdk(manifestBytes: ByteArray?): Int {
-        val applicationName = ReadManifest(manifestBytes!!).minSdkVersion
+    fun getMinSdk(manifestBytes: ByteArray): Int {
+        val applicationName = ManifestParser(manifestBytes).minSdkVersion
         return if (applicationName.isNullOrEmpty()) {
             21
         } else {
@@ -24,8 +24,8 @@ object AxmlEdit {
     }
 
     @JvmStatic
-    fun getPackageName(manifestBytes: ByteArray?): String {
-        val applicationName = ReadManifest(manifestBytes!!).packageName
+    fun getPackageName(manifestBytes: ByteArray): String {
+        val applicationName = ManifestParser(manifestBytes).packageName
         return if (applicationName.isNullOrEmpty()) {
             ""
         } else {
