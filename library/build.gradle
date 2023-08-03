@@ -3,7 +3,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'kotlin'
 
 dependencies {
-    implementation("com.github.TimScriptov:apkparser:1.9")
+    implementation("com.github.TimScriptov:apkparser:1.2.1")
 
     implementation("com.android.tools.smali:smali-dexlib2:3.0.3")
     implementation("org.jetbrains:annotations:24.0.1")
@@ -21,8 +21,13 @@ afterEvaluate {
                 from components.java
                 groupId = 'com.mcal'
                 artifactId = 'nmmp'
-                version = "1.1"
+                version = "1.1.2"
             }
         }
     }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }

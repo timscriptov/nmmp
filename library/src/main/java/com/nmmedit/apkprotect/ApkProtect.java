@@ -7,8 +7,12 @@ import com.android.tools.smali.dexlib2.iface.ClassDef;
 import com.android.tools.smali.dexlib2.iface.DexFile;
 import com.android.tools.smali.dexlib2.writer.io.FileDataStore;
 import com.android.tools.smali.dexlib2.writer.pool.DexPool;
-import com.android.zipflinger.*;
-import com.nmmedit.apkprotect.andres.AxmlEdit;
+import com.android.zipflinger.Source;
+import com.android.zipflinger.Sources;
+import com.android.zipflinger.ZipArchive;
+import com.android.zipflinger.ZipMap;
+import com.android.zipflinger.ZipSource;
+import com.mcal.apkparser.xml.ManifestParser;
 import com.nmmedit.apkprotect.data.Prefs;
 import com.nmmedit.apkprotect.data.Storage;
 import com.nmmedit.apkprotect.dex2c.Dex2c;
@@ -22,20 +26,37 @@ import com.nmmedit.apkprotect.log.ApkLogger;
 import com.nmmedit.apkprotect.sign.ApkVerifyCodeGenerator;
 import com.nmmedit.apkprotect.util.ApkUtils;
 import com.nmmedit.apkprotect.util.FileHelper;
+
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import javax.annotation.Nonnull;
 
 public class ApkProtect {
     public static final String ANDROID_MANIFEST_XML = "AndroidManifest.xml";
@@ -74,22 +95,25 @@ public class ApkProtect {
                 throw new RuntimeException("Not is apk");
             }
 
-            final String packageName = AxmlEdit.getPackageName(manifestBytes);
-
+            final ManifestParser parser = new ManifestParser(manifestBytes);
+            final String packageName = parser.getPackageName();
             //生成一些需要改变的c代码(随机opcode后的头文件及apk验证代码等)
-            generateCSources(packageName);
+            if (packageName != null && !packageName.isEmpty()) {
+                generateCSources(packageName);
+            }
 
             //解压得到所有classesN.dex
             List<File> files = getClassesFiles(apkFile, zipExtractDir);
             if (files.isEmpty()) {
                 throw new RuntimeException("No classes.dex");
             }
-            final int minSdk = AxmlEdit.getMinSdk(manifestBytes);
-
-            classAnalyzer.setMinSdk(minSdk);
-
-            if (minSdk < 23) {
-                //todo 加载android5的sdk,以保证能正确分析一些有问题的代码
+            final String minSdk = parser.getMinSdkVersion();
+            if (minSdk != null && !minSdk.isEmpty()) {
+                try {
+                    classAnalyzer.setMinSdk(Integer.parseInt(minSdk));
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
             }
 
             //先加载apk包含的所有dex文件,以便分析一些有问题的代码
