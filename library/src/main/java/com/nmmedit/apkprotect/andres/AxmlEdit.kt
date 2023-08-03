@@ -4,8 +4,8 @@ import com.mcal.apkparser.xml.ManifestParser
 
 object AxmlEdit {
     @JvmStatic
-    fun getApplicationName(manifestBytes: ByteArray?): String {
-        val applicationName = ManifestParser(manifestBytes!!).applicationName
+    fun getApplicationName(manifestBytes: ByteArray): String {
+        val applicationName = ManifestParser(manifestBytes).applicationName
         return if (applicationName.isNullOrEmpty()) {
             ""
         } else {
