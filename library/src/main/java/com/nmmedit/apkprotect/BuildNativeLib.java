@@ -2,6 +2,8 @@ package com.nmmedit.apkprotect;
 
 import com.nmmedit.apkprotect.data.Prefs;
 import com.nmmedit.apkprotect.log.ApkLogger;
+import com.nmmedit.apkprotect.util.OsDetector;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -143,7 +145,7 @@ public class BuildNativeLib {
             return new File(new File(getProjectHome(), "obj"), abi).getAbsolutePath();
         }
 
-        //camke --build <BuildPath>
+        //cmake --build <BuildPath>
         public String getBuildPath() {
             return new File(getProjectHome(),
                     String.format(".cxx/cmake/%s/%s", getBuildType().getBuildTypeName(), getAbi())).getAbsolutePath();
@@ -155,10 +157,16 @@ public class BuildNativeLib {
         }
 
         public String getCmakeBinaryPath() {
+            if(OsDetector.isWindows()) {
+                return new File(getCmakePath(), "/bin/cmake.exe").getAbsolutePath();
+            }
             return new File(getCmakePath(), "/bin/cmake").getAbsolutePath();
         }
 
         public String getNinjaBinaryPath() {
+            if(OsDetector.isWindows()) {
+                return new File(getCmakePath(), "/bin/ninja.exe").getAbsolutePath();
+            }
             return new File(getCmakePath(), "/bin/ninja").getAbsolutePath();
         }
 
