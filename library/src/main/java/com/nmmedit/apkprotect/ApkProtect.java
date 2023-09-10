@@ -91,10 +91,11 @@ public class ApkProtect {
         final File zipExtractDir = Storage.getZipExtractTempDir();
 
         try {
-            byte[] manifestBytes = ZipHelper.getZipFileContent(apkFile, ANDROID_MANIFEST_XML);
+            final byte[] manifestBytes = ZipHelper.getZipFileContent(apkFile, ANDROID_MANIFEST_XML);
 
             final ManifestParser parser = new ManifestParser(manifestBytes);
             final String packageName = parser.getPackageName();
+
             //生成一些需要改变的c代码(随机opcode后的头文件及apk验证代码等)
             if (packageName != null && !packageName.isEmpty()) {
                 generateCSources(packageName);
@@ -143,7 +144,7 @@ public class ApkProtect {
 
             final List<String> abis = getAbis(apkFile);
 
-            final Map<String, List<File>> nativeLibs = generateNativeLibs(apkFolders, abis);
+            final Map<String, List<File>> nativeLibs = generateNativeLibs(abis);
 
             File mainDex = outDexFiles.get(0);
 
@@ -199,35 +200,16 @@ public class ApkProtect {
         }
     }
 
-    public Map<String, List<File>> generateNativeLibs(@Nonnull ApkFolders apkFolders,
-                                                      @Nonnull final List<String> abis) throws IOException {
-//        String cmakePath = System.getenv("CMAKE_PATH");
-//        if (isEmpty(cmakePath)) {
-//            System.err.println("No CMAKE_PATH");
-//            cmakePath = Prefs.cmakePath();
-//        }
-        String cmakePath = Prefs.cmakePath();
-//        String sdkHome = System.getenv("ANDROID_SDK_HOME");
-//        if (isEmpty(sdkHome)) {
-//            sdkHome = Prefs.sdkPath();
-//            System.err.println("No ANDROID_SDK_HOME. Default is " + sdkHome);
-//        }
-        String sdkHome = Prefs.sdkPath();
-//        String ndkHome = System.getenv("ANDROID_NDK_HOME");
-//        if (isEmpty(ndkHome)) {
-//            ndkHome = Prefs.ndkPath();
-//            System.err.println("No ANDROID_NDK_HOME. Default is " + ndkHome);
-//        }
-        String ndkHome = Prefs.ndkPath();
-
+    public Map<String, List<File>> generateNativeLibs(@Nonnull final List<String> abis) throws IOException {
         final File outRootDir = Storage.getOutRootDir();
 
         final Map<String, List<File>> allLibs = new HashMap<>();
 
         for (String abi : abis) {
-            final BuildNativeLib.CMakeOptions cmakeOptions = new BuildNativeLib.CMakeOptions(cmakePath,
-                    sdkHome,
-                    ndkHome, 21,
+            final BuildNativeLib.CMakeOptions cmakeOptions = new BuildNativeLib.CMakeOptions(
+                    Prefs.cmakePath(),
+                    Prefs.sdkPath(),
+                    Prefs.ndkPath(), 21,
                     outRootDir.getAbsolutePath(),
                     BuildNativeLib.CMakeOptions.BuildType.RELEASE,
                     abi);
@@ -250,7 +232,7 @@ public class ApkProtect {
         final Pattern pattern = Pattern.compile("lib/(.*)/.*\\.so");
         final ZipFile zipFile = new ZipFile(apk);
         final Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        Set<String> abis = new HashSet<>();
+        final Set<String> abis = new HashSet<>();
         while (entries.hasMoreElements()) {
             final ZipEntry entry = entries.nextElement();
             final Matcher matcher = pattern.matcher(entry.getName());
@@ -264,7 +246,7 @@ public class ApkProtect {
         abis.remove("mips64");
         if (abis.isEmpty()) {
             //默认只生成armeabi-v7a
-            ArrayList<String> abi = new ArrayList<>();
+            final ArrayList<String> abi = new ArrayList<>();
             if (Prefs.getArm()) {
                 abi.add("armeabi-v7a");
             }
