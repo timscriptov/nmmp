@@ -89,11 +89,7 @@ public class ApkProtect {
         final File zipExtractDir = Storage.getZipExtractTempDir();
 
         try {
-            byte[] manifestBytes = ApkUtils.getFile(apkFile, ANDROID_MANIFEST_XML);
-            if (manifestBytes == null) {
-                //错误apk文件
-                throw new RuntimeException("Not is apk");
-            }
+            byte[] manifestBytes = FileHelper.getZipFileContent(apkFile, ANDROID_MANIFEST_XML);
 
             final ManifestParser parser = new ManifestParser(manifestBytes);
             final String packageName = parser.getPackageName();
