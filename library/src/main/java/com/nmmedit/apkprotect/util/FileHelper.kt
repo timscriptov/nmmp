@@ -1,6 +1,5 @@
 package com.nmmedit.apkprotect.util
 
-import com.mcal.apkparser.zip.ZipFile
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -9,24 +8,6 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 
 object FileHelper {
-    /**
-     * Возвращает содержимое файла с указанным именем из Zip-архива.
-     *
-     * @param zipFile Zip-архив, из которого нужно прочитать файл.
-     * @param filename Имя файла, который нужно прочитать.
-     * @return Массив байтов, содержащий содержимое файла.
-     * @throws IOException Если произошла ошибка при чтении файла из Zip-архива.
-     */
-    @JvmStatic
-    @Throws(IOException::class)
-    fun getZipFileContent(zipFile: File, filename: String): ByteArray {
-        ZipFile(zipFile).use {
-            it.getInputStream(it.getEntry(filename)).use { inputStream ->
-                return inputStream.readBytes()
-            }
-        }
-    }
-
     @JvmStatic
     fun readFile(file: File, encoding: Charset): String {
         return file.inputStream().readBytes().toString(encoding)

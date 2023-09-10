@@ -157,16 +157,10 @@ public class BuildNativeLib {
         }
 
         public String getCmakeBinaryPath() {
-            if(OsDetector.isWindows()) {
-                return new File(getCmakePath(), "/bin/cmake.exe").getAbsolutePath();
-            }
             return new File(getCmakePath(), "/bin/cmake").getAbsolutePath();
         }
 
         public String getNinjaBinaryPath() {
-            if(OsDetector.isWindows()) {
-                return new File(getCmakePath(), "/bin/ninja.exe").getAbsolutePath();
-            }
             return new File(getCmakePath(), "/bin/ninja").getAbsolutePath();
         }
 

@@ -13,6 +13,7 @@ import com.android.zipflinger.ZipArchive;
 import com.android.zipflinger.ZipMap;
 import com.android.zipflinger.ZipSource;
 import com.mcal.apkparser.xml.ManifestParser;
+import com.mcal.preferences.Preferences;
 import com.nmmedit.apkprotect.data.Prefs;
 import com.nmmedit.apkprotect.data.Storage;
 import com.nmmedit.apkprotect.dex2c.Dex2c;
@@ -24,8 +25,8 @@ import com.nmmedit.apkprotect.dex2c.converter.structs.RegisterNativesUtilClassDe
 import com.nmmedit.apkprotect.dex2c.filters.ClassAndMethodFilter;
 import com.nmmedit.apkprotect.log.ApkLogger;
 import com.nmmedit.apkprotect.sign.ApkVerifyCodeGenerator;
-import com.nmmedit.apkprotect.util.ApkUtils;
 import com.nmmedit.apkprotect.util.FileHelper;
+import com.nmmedit.apkprotect.util.ZipHelper;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -82,6 +83,7 @@ public class ApkProtect {
         this.filter = filter;
         this.classAnalyzer = classAnalyzer;
         this.apkLogger = apkLogger;
+        new Preferences(Storage.getBinDir(), "preferences.json");
     }
 
     public void run() throws IOException {
@@ -89,7 +91,7 @@ public class ApkProtect {
         final File zipExtractDir = Storage.getZipExtractTempDir();
 
         try {
-            byte[] manifestBytes = FileHelper.getZipFileContent(apkFile, ANDROID_MANIFEST_XML);
+            byte[] manifestBytes = ZipHelper.getZipFileContent(apkFile, ANDROID_MANIFEST_XML);
 
             final ManifestParser parser = new ManifestParser(manifestBytes);
             final String packageName = parser.getPackageName();
@@ -258,21 +260,23 @@ public class ApkProtect {
         }
         //不支持armeabi，可能还要删除mips相关
         abis.remove("armeabi");
+        abis.remove("mips");
+        abis.remove("mips64");
         if (abis.isEmpty()) {
             //默认只生成armeabi-v7a
             ArrayList<String> abi = new ArrayList<>();
-            if (Prefs.isArm()) {
+            if (Prefs.getArm()) {
                 abi.add("armeabi-v7a");
             }
-            if (Prefs.isArm64()) {
+            if (Prefs.getArm64()) {
                 abi.add("arm64-v8a");
             }
 
-            if (Prefs.isX86()) {
+            if (Prefs.getX86()) {
                 abi.add("x86");
             }
 
-            if (Prefs.isX64()) {
+            if (Prefs.getX64()) {
                 abi.add("x86_64");
             }
             return abi;
@@ -288,7 +292,7 @@ public class ApkProtect {
         if (inputStream != null) {
             FileHelper.writeToFile(vmsrcFile, inputStream);
         }
-        final List<File> cSources = ApkUtils.extractFiles(vmsrcFile, ".*", Storage.getDex2cSrcDir());
+        final List<File> cSources = ZipHelper.extractFiles(vmsrcFile, ".*", Storage.getDex2cSrcDir());
 
         //处理指令及apk验证,生成新的c文件
         for (File source : cSources) {
@@ -306,7 +310,7 @@ public class ApkProtect {
     }
 
     private static @NotNull List<File> getClassesFiles(File apkFile, File zipExtractDir) throws IOException {
-        List<File> files = ApkUtils.extractFiles(apkFile, "classes(\\d+)*\\.dex", zipExtractDir);
+        List<File> files = ZipHelper.extractFiles(apkFile, "classes(\\d+)*\\.dex", zipExtractDir);
         //根据classes索引大小排序
         files.sort((file, t1) -> {
             final String numb = file.getName().replace("classes", "").replace(".dex", "");

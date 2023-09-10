@@ -1,106 +1,90 @@
 package com.nmmedit.apkprotect.data
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.nmmedit.apkprotect.data.Storage.binDir
-import com.nmmedit.apkprotect.data.config.Config
-import com.nmmedit.apkprotect.util.FileHelper
-import com.nmmedit.apkprotect.util.FileHelper.readFile
+import com.mcal.preferences.Preferences
 import com.nmmedit.apkprotect.util.OsDetector
-import java.io.File
-import java.io.InputStream
-import java.nio.charset.StandardCharsets
 
 object Prefs {
-    private val configFileName = if (OsDetector.isWindows) {
-        "config-windows.json"
-    } else {
-        "config.json"
-    }
-
-    private val configFile = File(binDir, configFileName)
-
     @JvmStatic
-    fun config(): Config {
-        if (!configFile.exists() || configFile.length() <= 0) {
-            FileHelper.writeToFile(
-                configFile,
-                Prefs::class.java.getResourceAsStream("/$configFileName") as InputStream
-            )
+    var arm: Boolean = true
+        get() = Preferences.getBoolean("arm", true)
+        set(value) {
+            Preferences.putBoolean("arm", value)
+            field = value
         }
-        return try {
-            val content = readFile(configFile, StandardCharsets.UTF_8)
-            val config = GsonBuilder().create().fromJson(content, Config::class.java)
-            config
-        } catch (e: Exception) {
-            throw RuntimeException("Load config failed $configFile", e)
+
+    @JvmStatic
+    var arm64: Boolean = true
+        get() = Preferences.getBoolean("arm64", true)
+        set(value) {
+            Preferences.putBoolean("arm64", value)
+            field = value
         }
-    }
 
     @JvmStatic
-    val isArm: Boolean
-        get() = config().abi?.arm ?: true
+    var x86: Boolean = true
+        get() = Preferences.getBoolean("x86", true)
+        set(value) {
+            Preferences.putBoolean("x86", value)
+            field = value
+        }
 
     @JvmStatic
-    val isArm64: Boolean
-        get() = config().abi?.arm64 ?: false
-
-    @JvmStatic
-    val isX86: Boolean
-        get() = config().abi?.x86 ?: true
-
-    @JvmStatic
-    val isX64: Boolean
-        get() = config().abi?.x64 ?: false
+    var x64: Boolean = true
+        get() = Preferences.getBoolean("x64", true)
+        set(value) {
+            Preferences.putBoolean("x64", value)
+            field = value
+        }
 
     @JvmStatic
     fun sdkPath(): String {
-        return config().environment?.sdkPath ?: "C:/Android/Sdk"
+        return Preferences.getString("sdk_path", System.getenv("ANDROID_SDK_HOME"))
     }
 
     @JvmStatic
     fun setSdkPath(path: String) {
-        val config = config()
-        config.environment?.sdkPath = path
-        FileHelper.writeToFile(configFile, Gson().toJson(config))
+        Preferences.putString("sdk_path", path)
     }
 
     @JvmStatic
     fun cmakePath(): String {
-        return config().environment?.cmakePath ?: "C:/Android/Sdk/cmake/3.18.1"
+        return Preferences.getString("cmake_path", System.getenv("CMAKE_PATH"))
     }
 
     @JvmStatic
     fun setCmakePath(path: String) {
-        val config = config()
-        config.environment?.cmakePath = path
-        FileHelper.writeToFile(configFile, Gson().toJson(config))
+        Preferences.putString("cmake_path", path)
     }
 
     @JvmStatic
     fun ndkPath(): String {
-        return config().environment?.ndkPath ?: "C:/Android/Sdk/ndk/25.1.8937393"
+        return Preferences.getString("ndk_path", System.getenv("ANDROID_NDK_HOME"))
     }
 
     @JvmStatic
     fun setNdkPath(path: String) {
-        val config = config()
-        config.environment?.ndkPath = path
-        FileHelper.writeToFile(configFile, Gson().toJson(config))
+        Preferences.putString("ndk_path", path)
     }
 
     @JvmStatic
     fun ndkToolchains(): String {
-        return config().environment?.ndkToolchains ?: "/toolchains/llvm/prebuilt/"
+        return Preferences.getString("toolchains", "/toolchains/llvm/prebuilt/")
     }
 
     @JvmStatic
     fun ndkAbi(): String {
-        return config().environment?.ndkAbi ?: "windows-x86_64"
+        return Preferences.getString(
+            "abi",
+            if (OsDetector.isWindows) {
+                "windows-x86_64"
+            } else {
+                "linux-x86_64"
+            }
+        )
     }
 
     @JvmStatic
     fun ndkStrip(): String {
-        return config().environment?.ndkStrip ?: "/bin/llvm-strip"
+        return Preferences.getString("strip", "/bin/llvm-strip")
     }
 }
