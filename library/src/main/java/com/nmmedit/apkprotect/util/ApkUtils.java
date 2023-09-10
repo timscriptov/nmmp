@@ -1,8 +1,20 @@
 package com.nmmedit.apkprotect.util;
 
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -35,6 +47,13 @@ public final class ApkUtils {
      */
     public static byte[] getFile(File apkFile, String filename) throws IOException {
         try (ZipFile apkZip = new ZipFile(apkFile)) {
+            try {
+                final Field useZip64Field = ZipFile.class.getDeclaredField("disableZip64ExtraFieldValidation");
+                useZip64Field.setAccessible(true);
+                useZip64Field.set(apkZip, Boolean.TRUE);
+            } catch (IllegalAccessException | NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }
             ZipEntry zipEntry = apkZip.getEntry(filename);
             if (zipEntry == null) {
                 return null;
@@ -46,7 +65,7 @@ public final class ApkUtils {
     }
 
     private static byte[] toByteArray(InputStream in) throws IOException {
-        byte[] buf = new byte[4 * 1024];
+        byte[] buf = new byte[8 * 1024];
         int len;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         while ((len = in.read(buf)) != -1) {
@@ -56,7 +75,7 @@ public final class ApkUtils {
     }
 
     public static void copyStream(InputStream in, OutputStream out) throws IOException {
-        byte[] buf = new byte[4 * 1024];
+        byte[] buf = new byte[8 * 1024];
         int len;
         while ((len = in.read(buf)) != -1) {
             out.write(buf, 0, len);
