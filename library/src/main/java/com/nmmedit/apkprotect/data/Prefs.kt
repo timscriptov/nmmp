@@ -38,7 +38,7 @@ object Prefs {
 
     @JvmStatic
     fun sdkPath(): String {
-        return Preferences.getString("sdk_path", System.getenv("ANDROID_SDK_HOME"))
+        return Preferences.getString("sdk_path", System.getenv("ANDROID_SDK_HOME") ?: "")
     }
 
     @JvmStatic
@@ -48,7 +48,7 @@ object Prefs {
 
     @JvmStatic
     fun cmakePath(): String {
-        return Preferences.getString("cmake_path", System.getenv("CMAKE_PATH"))
+        return Preferences.getString("cmake_path", System.getenv("CMAKE_PATH") ?: "")
     }
 
     @JvmStatic
@@ -58,7 +58,7 @@ object Prefs {
 
     @JvmStatic
     fun ndkPath(): String {
-        return Preferences.getString("ndk_path", System.getenv("ANDROID_NDK_HOME"))
+        return Preferences.getString("ndk_path", System.getenv("ANDROID_NDK_HOME") ?: "")
     }
 
     @JvmStatic
