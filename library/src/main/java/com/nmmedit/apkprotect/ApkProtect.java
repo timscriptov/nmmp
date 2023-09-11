@@ -199,7 +199,7 @@ public class ApkProtect {
         }
     }
 
-    public static void writeCmakeFile(File cmakeTemp, String libName) throws IOException {
+    public static void writeCmakeFile(File cmakeTemp, String libNmmpName, String libVmName) throws IOException {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(cmakeTemp), StandardCharsets.UTF_8));
 
@@ -208,7 +208,10 @@ public class ApkProtect {
         String libNameFormat = "set\\(LIBNAME_PLACEHOLDER \"%s\"\\)";
 
         //替换原本libname
-        lines = lines.replaceAll(String.format(libNameFormat, "nmmp"), String.format(libNameFormat, libName));
+        lines = lines.replaceAll(String.format(libNameFormat, "nmmp"), String.format(libNameFormat, libNmmpName));
+
+        libNameFormat = "set\\(LIBNMMVM_NAME \"nmmvm\" CACHE INTERNAL \"lib nmmvm name\"\\)";
+        lines = lines.replaceAll(String.format(libNameFormat, "nmmvm"), String.format(libNameFormat, libVmName));
 
         try (FileWriter fileWriter = new FileWriter(cmakeTemp)) {
             fileWriter.write(lines);
@@ -556,7 +559,7 @@ public class ApkProtect {
                 writeApkVerifierFile(packageName, source, apkVerifyCodeGenerator);
             } else if (source.getName().equals("CMakeLists.txt")) {
                 //处理cmake里配置的本地库名
-                writeCmakeFile(source, Prefs.getVmName());
+                writeCmakeFile(source, Prefs.getNmmpName(), Prefs.getVmName());
             }
         }
     }
