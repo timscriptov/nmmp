@@ -10,12 +10,13 @@ import com.google.common.collect.Sets;
 import com.nmmedit.apkprotect.deobfus.MappingProcessor;
 import com.nmmedit.apkprotect.deobfus.MappingReader;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.annotation.Nonnull;
 
 /**
  * 读取proguard的mapping.txt文件,根据它得到class和方法名混淆前后映射关系,然后再执行过滤规则
@@ -56,87 +57,8 @@ public class ProguardMappingConfig implements ClassAndMethodFilter, MappingProce
         }
     }
 
-    private List<String> getNewArgs(List<String> args) {
-        final ArrayList<String> newArgs = new ArrayList<>();
-        for (String arg : args) {
-            final String newType = oldTypeNewTypeMap.get(arg);
-            newArgs.add(newType == null ? arg : newType);
-        }
-        return newArgs;
-    }
-
-
-    @Override
-    public final boolean acceptClass(ClassDef classDef) {
-        //先处理上游的过滤规则,如果上游不通过则直接返回不再处理,如果上游通过再处理当前的过滤规则
-        if (filter != null && !filter.acceptClass(classDef)) {
-            return false;
-        }
-        //得到混淆之前的className
-        final String oldType = getOriginClassType(classDef.getType());
-        if (oldType == null) {
-            return false;
-        }
-        final ArrayList<String> ifacs = new ArrayList<>();
-        for (String ifac : classDef.getInterfaces()) {
-            ifacs.add(getOriginClassType(ifac));
-        }
-
-        return simpleRules != null && simpleRules.matchClass(
-                oldType,
-                getOriginClassType(classDef.getSuperclass()),
-                ifacs);
-    }
-
-
-    private String getOriginClassType(String type) {
-        final String oldType = newTypeOldTypeMap.get(type);
-        if (oldType == null) {
-            return type;
-        }
-        return oldType;
-    }
-
-    @Override
-    public final boolean acceptMethod(Method method) {
-        if (filter != null && !filter.acceptMethod(method)) {
-            return false;
-        }
-        final String oldType = getOriginClassType(method.getDefiningClass());
-        if (oldType == null) {
-            return false;
-        }
-        final Set<MethodReference> oldMethodRefSet = newMethodRefMap.get(method);
-
-
-        if (oldMethodRefSet != null) {
-
-            for (MethodReference reference : oldMethodRefSet) {
-                if (oldType.equals(reference.getDefiningClass())) {
-                    if (simpleRules != null && simpleRules.matchMethod(reference.getName())) {
-                        return true;
-                    }
-                }
-            }
-
-        }
-
-        return simpleRules != null && simpleRules.matchMethod(method.getName());
-    }
-
     private static String classNameToType(String className) {
         return "L" + className.replace('.', '/') + ";";
-    }
-
-    @Override
-    public final void processClassMapping(String className, String newClassName) {
-        newTypeOldTypeMap.put(classNameToType(newClassName), classNameToType(className));
-        oldTypeNewTypeMap.put(classNameToType(className), classNameToType(newClassName));
-    }
-
-    @Override
-    public final void processFieldMapping(String className, String fieldType, String fieldName, String newClassName, String newFieldName) {
-
     }
 
     @Nonnull
@@ -175,6 +97,83 @@ public class ProguardMappingConfig implements ClassAndMethodFilter, MappingProce
                 }
 
         }
+    }
+
+    private List<String> getNewArgs(List<String> args) {
+        final ArrayList<String> newArgs = new ArrayList<>();
+        for (String arg : args) {
+            final String newType = oldTypeNewTypeMap.get(arg);
+            newArgs.add(newType == null ? arg : newType);
+        }
+        return newArgs;
+    }
+
+    @Override
+    public final boolean acceptClass(ClassDef classDef) {
+        //先处理上游的过滤规则,如果上游不通过则直接返回不再处理,如果上游通过再处理当前的过滤规则
+        if (filter != null && !filter.acceptClass(classDef)) {
+            return false;
+        }
+        //得到混淆之前的className
+        final String oldType = getOriginClassType(classDef.getType());
+        if (oldType == null) {
+            return false;
+        }
+        final ArrayList<String> ifacs = new ArrayList<>();
+        for (String ifac : classDef.getInterfaces()) {
+            ifacs.add(getOriginClassType(ifac));
+        }
+
+        return simpleRules != null && simpleRules.matchClass(
+                oldType,
+                getOriginClassType(classDef.getSuperclass()),
+                ifacs);
+    }
+
+    private String getOriginClassType(String type) {
+        final String oldType = newTypeOldTypeMap.get(type);
+        if (oldType == null) {
+            return type;
+        }
+        return oldType;
+    }
+
+    @Override
+    public final boolean acceptMethod(Method method) {
+        if (filter != null && !filter.acceptMethod(method)) {
+            return false;
+        }
+        final String oldType = getOriginClassType(method.getDefiningClass());
+        if (oldType == null) {
+            return false;
+        }
+        final Set<MethodReference> oldMethodRefSet = newMethodRefMap.get(method);
+
+
+        if (oldMethodRefSet != null) {
+
+            for (MethodReference reference : oldMethodRefSet) {
+                if (oldType.equals(reference.getDefiningClass())) {
+                    if (simpleRules != null && simpleRules.matchMethod(reference.getName())) {
+                        return true;
+                    }
+                }
+            }
+
+        }
+
+        return simpleRules != null && simpleRules.matchMethod(method.getName());
+    }
+
+    @Override
+    public final void processClassMapping(String className, String newClassName) {
+        newTypeOldTypeMap.put(classNameToType(newClassName), classNameToType(className));
+        oldTypeNewTypeMap.put(classNameToType(className), classNameToType(newClassName));
+    }
+
+    @Override
+    public final void processFieldMapping(String className, String fieldType, String fieldName, String newClassName, String newFieldName) {
+
     }
 
     @Nonnull

@@ -1,6 +1,6 @@
 package com.nmmedit.apkprotect.util
 
-import java.util.*
+import java.util.Locale
 
 object OsDetector {
     @JvmStatic

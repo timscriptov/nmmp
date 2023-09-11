@@ -17,11 +17,12 @@ import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.nmmedit.apkprotect.dex2c.converter.ClassAnalyzer;
 import com.nmmedit.apkprotect.util.Pair;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import javax.annotation.Nonnull;
 
 public class MethodConverter {
 
@@ -30,32 +31,6 @@ public class MethodConverter {
 
     public MethodConverter(@Nonnull ClassAnalyzer classAnalyzer) {
         this.classAnalyzer = classAnalyzer;
-    }
-
-    //转换方法为native及具体实现
-    @Nonnull
-    public Pair<List<? extends Method>, Method> convert(@Nonnull Method method) {
-        // android6及以上不用特别处理
-        if (MethodUtil.isDirect(method)) {
-            return splitMethod(method);
-        } else {
-            // virtual method
-            // 模仿api21和22的jni方法查找, 如果找到表示直接把方法标识为native会出错
-            final MethodReference directMethod = classAnalyzer.findDirectMethod(method);
-            if (directMethod == null) {
-                // 不用特殊处理
-                return splitMethod(method);
-            }
-
-            return generateMethod(method);
-
-        }
-    }
-
-
-    // 把方法分离为native方法和一个正常方法
-    private Pair<List<? extends Method>, Method> splitMethod(@Nonnull Method method) {
-        return new Pair<>(Collections.singletonList(methodToNative(method)), method);
     }
 
     //方法转换为native方法
@@ -73,23 +48,6 @@ public class MethodConverter {
                 null);
     }
 
-
-    private String getNewMethodName(ClassDef classDef,
-                                    String name,
-                                    List<? extends CharSequence> parameterTypes,
-                                    String returnType) {
-        // 找到一个不冲突的方法名
-        // 新方法名规则, 直接在原方法名后面加数字
-        for (int idx = 0; idx < 0xFFFF; idx++) {
-            final String newMethodName = name + idx;
-            final MethodReference method = classAnalyzer.findMethod(classDef, newMethodName, parameterTypes, returnType);
-            if (method == null) {
-                return newMethodName;
-            }
-        }
-        throw new RuntimeException("unknown");
-    }
-
     private static int getResultRegisterWidth(String type) {
         int firstChar = type.charAt(0);
         if (firstChar == 'J' || firstChar == 'D') {
@@ -99,71 +57,6 @@ public class MethodConverter {
         } else {
             return 1;
         }
-    }
-
-    private Pair<List<? extends Method>, Method> generateMethod(@Nonnull Method method) {
-        // 得到方法所在的class
-        final ClassDef definingClass = classAnalyzer.getClassDef(method.getDefiningClass());
-        if (definingClass == null) {
-            // 可能没加载到对应dex, 直接简单处理
-            return splitMethod(method);
-        }
-
-        final MethodImplementation implementation = method.getImplementation();
-        if (implementation == null) {
-            throw new RuntimeException("method error");
-        }
-
-        // 生成一个私有的native方法, 原方法调用这个native方法
-        final String newMethodName = getNewMethodName(
-                definingClass,
-                method.getName(),
-                method.getParameterTypes(),
-                method.getReturnType());
-
-        int accessFlags = AccessFlags.PRIVATE.getValue();
-        if (MethodUtil.isStatic(method)) {
-            accessFlags |= AccessFlags.STATIC.getValue();
-        }
-
-        final ImmutableMethod shellNativeMethod = new ImmutableMethod(
-                method.getDefiningClass(),
-                newMethodName,
-                //去掉参数annotation,不然dex格式有问题
-                removeAnnotation(method.getParameters()),
-                method.getReturnType(),
-                //私有的native方法
-                accessFlags | AccessFlags.NATIVE.getValue(),
-                method.getAnnotations(),
-                method.getHiddenApiRestrictions(),
-                null);
-
-        // 方法指令部分被写入改名后的新方法
-        final ImmutableMethod implNativeMethod = new ImmutableMethod(
-                method.getDefiningClass(),
-                newMethodName,
-                method.getParameters(),
-                method.getReturnType(),
-                accessFlags,
-                method.getAnnotations(),
-                method.getHiddenApiRestrictions(),
-                implementation);
-
-
-        final MethodImplementation methodImpl = buildCallShellNativeMethodImpl(method, shellNativeMethod);
-
-
-        final ImmutableMethod method1 = new ImmutableMethod(
-                method.getDefiningClass(),
-                method.getName(),
-                method.getParameters(),
-                method.getReturnType(),
-                method.getAccessFlags(),
-                method.getAnnotations(),
-                method.getHiddenApiRestrictions(),
-                methodImpl);
-
-        return new Pair<>(Arrays.asList(method1, shellNativeMethod), implNativeMethod);
     }
 
     // 删除参数的annotation
@@ -244,5 +137,111 @@ public class MethodConverter {
             methodImpl.addInstruction(instruction);
         }
         return methodImpl;
+    }
+
+    //转换方法为native及具体实现
+    @Nonnull
+    public Pair<List<? extends Method>, Method> convert(@Nonnull Method method) {
+        // android6及以上不用特别处理
+        if (MethodUtil.isDirect(method)) {
+            return splitMethod(method);
+        } else {
+            // virtual method
+            // 模仿api21和22的jni方法查找, 如果找到表示直接把方法标识为native会出错
+            final MethodReference directMethod = classAnalyzer.findDirectMethod(method);
+            if (directMethod == null) {
+                // 不用特殊处理
+                return splitMethod(method);
+            }
+
+            return generateMethod(method);
+
+        }
+    }
+
+    // 把方法分离为native方法和一个正常方法
+    private Pair<List<? extends Method>, Method> splitMethod(@Nonnull Method method) {
+        return new Pair<>(Collections.singletonList(methodToNative(method)), method);
+    }
+
+    private String getNewMethodName(ClassDef classDef,
+                                    String name,
+                                    List<? extends CharSequence> parameterTypes,
+                                    String returnType) {
+        // 找到一个不冲突的方法名
+        // 新方法名规则, 直接在原方法名后面加数字
+        for (int idx = 0; idx < 0xFFFF; idx++) {
+            final String newMethodName = name + idx;
+            final MethodReference method = classAnalyzer.findMethod(classDef, newMethodName, parameterTypes, returnType);
+            if (method == null) {
+                return newMethodName;
+            }
+        }
+        throw new RuntimeException("unknown");
+    }
+
+    private Pair<List<? extends Method>, Method> generateMethod(@Nonnull Method method) {
+        // 得到方法所在的class
+        final ClassDef definingClass = classAnalyzer.getClassDef(method.getDefiningClass());
+        if (definingClass == null) {
+            // 可能没加载到对应dex, 直接简单处理
+            return splitMethod(method);
+        }
+
+        final MethodImplementation implementation = method.getImplementation();
+        if (implementation == null) {
+            throw new RuntimeException("method error");
+        }
+
+        // 生成一个私有的native方法, 原方法调用这个native方法
+        final String newMethodName = getNewMethodName(
+                definingClass,
+                method.getName(),
+                method.getParameterTypes(),
+                method.getReturnType());
+
+        int accessFlags = AccessFlags.PRIVATE.getValue();
+        if (MethodUtil.isStatic(method)) {
+            accessFlags |= AccessFlags.STATIC.getValue();
+        }
+
+        final ImmutableMethod shellNativeMethod = new ImmutableMethod(
+                method.getDefiningClass(),
+                newMethodName,
+                //去掉参数annotation,不然dex格式有问题
+                removeAnnotation(method.getParameters()),
+                method.getReturnType(),
+                //私有的native方法
+                accessFlags | AccessFlags.NATIVE.getValue(),
+                method.getAnnotations(),
+                method.getHiddenApiRestrictions(),
+                null);
+
+        // 方法指令部分被写入改名后的新方法
+        final ImmutableMethod implNativeMethod = new ImmutableMethod(
+                method.getDefiningClass(),
+                newMethodName,
+                method.getParameters(),
+                method.getReturnType(),
+                accessFlags,
+                method.getAnnotations(),
+                method.getHiddenApiRestrictions(),
+                implementation);
+
+
+        final MethodImplementation methodImpl = buildCallShellNativeMethodImpl(method, shellNativeMethod);
+
+
+        final ImmutableMethod method1 = new ImmutableMethod(
+                method.getDefiningClass(),
+                method.getName(),
+                method.getParameters(),
+                method.getReturnType(),
+                method.getAccessFlags(),
+                method.getAnnotations(),
+                method.getHiddenApiRestrictions(),
+                methodImpl);
+
+        return new Pair<>(Arrays.asList(method1, shellNativeMethod), implNativeMethod);
     }
 }

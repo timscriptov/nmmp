@@ -12,10 +12,11 @@ import com.android.tools.smali.dexlib2.iface.Method;
 import com.android.tools.smali.dexlib2.iface.MethodImplementation;
 import com.android.tools.smali.dexlib2.iface.MethodParameter;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import javax.annotation.Nonnull;
 
 //默认无参数构造方法
 

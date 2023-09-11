@@ -2,14 +2,15 @@ package com.nmmedit.apkprotect.dex2c.filters;
 
 import com.google.common.collect.HashMultimap;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * class * extends android.app.Activity
@@ -29,9 +30,28 @@ import java.util.Set;
  */
 public class SimpleRules {
     private final HashMultimap<ClassRule, MethodRule> convertRules = HashMultimap.create();
-
+    private Set<MethodRule> methodRules;
 
     public SimpleRules() {
+    }
+
+    private static String classNameToType(String className) {
+        return "L" + className.replace('.', '/') + ";";
+    }
+
+    @Nonnull
+    private static String toRegex(String s) {
+        final StringBuilder sb = new StringBuilder(s.length() + 3);
+        for (int i = 0; i < s.length(); i++) {
+            final char c = s.charAt(i);
+            switch (c) {
+                case '*':
+                    sb.append('.');
+                default:
+                    sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     public void parse(Reader ruleReader) throws IOException {
@@ -111,8 +131,6 @@ public class SimpleRules {
         }
     }
 
-    private Set<MethodRule> methodRules;
-
     public boolean matchClass(@Nonnull String classType, @Nullable String supperType, @Nonnull List<String> ifacTypes) {
         for (ClassRule rule : convertRules.keySet()) {
             final String typeRegex = toRegex(classNameToType(rule.className));
@@ -154,25 +172,6 @@ public class SimpleRules {
             }
         }
         return false;
-    }
-
-    private static String classNameToType(String className) {
-        return "L" + className.replace('.', '/') + ";";
-    }
-
-    @Nonnull
-    private static String toRegex(String s) {
-        final StringBuilder sb = new StringBuilder(s.length() + 3);
-        for (int i = 0; i < s.length(); i++) {
-            final char c = s.charAt(i);
-            switch (c) {
-                case '*':
-                    sb.append('.');
-                default:
-                    sb.append(c);
-            }
-        }
-        return sb.toString();
     }
 
     private static class ClassRule {

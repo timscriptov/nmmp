@@ -12,10 +12,15 @@ import com.google.common.collect.HashMultimap;
 import com.nmmedit.apkprotect.dex2c.DexConfig;
 import com.nmmedit.apkprotect.dex2c.converter.instructionrewriter.InstructionRewriter;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
 
 
 /**
@@ -47,6 +52,33 @@ public class JniCodeGenerator {
 
         instructionRewriter.loadReferences(resolverCodeGenerator.getReferences(), analyzer);
 
+    }
+
+    public static String getJNIType(String type) {
+        switch (type) {
+            case "Z":
+                return "jboolean";
+            case "B":
+                return "jbyte";
+            case "S":
+                return "jshort";
+            case "C":
+                return "jchar";
+            case "I":
+                return "jint";
+            case "F":
+                return "jfloat";
+            case "J":
+                return "jlong";
+            case "D":
+                return "jdouble";
+//            case "Ljava/lang/String;":
+//                return "jstring";
+            case "V":
+                return "void";
+            default:
+                return "jobject";
+        }
     }
 
     public void addMethod(Method method, Writer writer) throws IOException {
@@ -394,33 +426,6 @@ public class JniCodeGenerator {
                         "}\n\n"
                 , funName)
         );
-    }
-
-    public static String getJNIType(String type) {
-        switch (type) {
-            case "Z":
-                return "jboolean";
-            case "B":
-                return "jbyte";
-            case "S":
-                return "jshort";
-            case "C":
-                return "jchar";
-            case "I":
-                return "jint";
-            case "F":
-                return "jfloat";
-            case "J":
-                return "jlong";
-            case "D":
-                return "jdouble";
-//            case "Ljava/lang/String;":
-//                return "jstring";
-            case "V":
-                return "void";
-            default:
-                return "jobject";
-        }
     }
 
     private static class MyMethod {

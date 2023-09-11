@@ -2,7 +2,12 @@ package com.nmmedit.apkprotect.dex2c.converter;
 
 import com.android.tools.smali.dexlib2.AccessFlags;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
-import com.android.tools.smali.dexlib2.iface.*;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
+import com.android.tools.smali.dexlib2.iface.ExceptionHandler;
+import com.android.tools.smali.dexlib2.iface.Field;
+import com.android.tools.smali.dexlib2.iface.Method;
+import com.android.tools.smali.dexlib2.iface.MethodImplementation;
+import com.android.tools.smali.dexlib2.iface.TryBlock;
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction;
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
@@ -13,44 +18,67 @@ import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.google.common.collect.Sets;
 import com.nmmedit.apkprotect.util.ModifiedUtf8;
 
-import javax.annotation.Nonnull;
 import java.io.UTFDataFormatException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
+import javax.annotation.Nonnull;
 
 
 //用于收集引用，生成c结构体同时用于指令重写时提供引用索引
 
 public class References {
 
+    final ArrayList<String> stringPool = new ArrayList<>();
+    //用于重写const-string指令索引
+    final ArrayList<String> constStringPool = new ArrayList<>();
     private final ClassAnalyzer analyzer;
-    //计算type名最大长度，方便生成c代码时直接使用栈上内存
-    int maxTypeLen = 0;
-
     //基本字符串，其他引用全指向它
     private final HashSet<String> stringRefs = Sets.newHashSet();
-
     //所有类型引用
     private final HashSet<String> typeRefs = Sets.newHashSet();
-
     //域引用
     private final HashSet<MyFieldRef> fieldRefs = Sets.newHashSet();
     //方法引用
     private final HashSet<MyMethodRef> methodRefs = Sets.newHashSet();
-
-
     //方法参数加上返回类型，例如：(II)V
     private final HashSet<String> signatureRefs = Sets.newHashSet();
-
     //const-string两个指令需要的字符串
     private final HashSet<String> constantStrings = Sets.newHashSet();
-
     //扩展字符串池，原本dex没有，提前做些解析提升性能，为了不影响一些指令的引用索引防止超过65533,把它追加在字符串常量池后面
     private final HashSet<String> extStringRefs = Sets.newHashSet();
+    private final HashMap<String, Integer> stringPoolIndexMap = new HashMap<>();
+    private final HashMap<String, Integer> constStringPoolIndexMap = new HashMap<>();
+    private final ArrayList<String> typePool = new ArrayList<>();
+    private final HashMap<String, Integer> typePoolIndexMap = new HashMap<>();
+    //保持跟type pool一致(顺序和大小)，className只是去掉L;的类型字符串，如果基本类型则不处理比如I,B
+    private final ArrayList<String> classNamePool = new ArrayList<>();
+    private final HashMap<String, Integer> classNamePoolIndexMap = new HashMap<>();
+    //方法签名及索引
+    private final ArrayList<String> signaturePool = new ArrayList<>();
+    private final HashMap<String, Integer> signaturePoolIndexMap = new HashMap<>();
+    private final ArrayList<FieldReference> fieldPool = new ArrayList<>();
+    private final HashMap<FieldReference, Integer> fieldPoolIndexMap = new HashMap<>();
+    private final ArrayList<MethodReference> methodPool = new ArrayList<>();
+    private final HashMap<MethodReference, Integer> methodPoolIndexMap = new HashMap<>();
+    //计算type名最大长度，方便生成c代码时直接使用栈上内存
+    int maxTypeLen = 0;
 
     References(@Nonnull DexBackedDexFile dexFile,
                @Nonnull ClassAnalyzer analyzer) {
         this.analyzer = analyzer;
         parseReferences(dexFile);
+    }
+
+    @Nonnull
+    private static String typeToClassName(@Nonnull String type) {
+        if (type.charAt(0) == 'L') {
+            return type.substring(1, type.length() - 1);
+        }
+        return type;
     }
 
     private void addStringRef(String type) {
@@ -82,15 +110,6 @@ public class References {
     private void addExtStringRef(String type) {
         stringRefs.add(type);
     }
-
-    @Nonnull
-    private static String typeToClassName(@Nonnull String type) {
-        if (type.charAt(0) == 'L') {
-            return type.substring(1, type.length() - 1);
-        }
-        return type;
-    }
-
 
     private void addMethodSignature(MethodReference reference) {
         final List<? extends CharSequence> parameterTypes = reference.getParameterTypes();
@@ -305,9 +324,6 @@ public class References {
         }
     }
 
-    final ArrayList<String> stringPool = new ArrayList<>();
-    private final HashMap<String, Integer> stringPoolIndexMap = new HashMap<>();
-
     private void makeStringPool() {
         //添加到有序列表里，同时缓存索引给其他引用使用
         final ArrayList<String> stringPool = this.stringPool;
@@ -332,12 +348,6 @@ public class References {
         return stringPool;
     }
 
-
-    //用于重写const-string指令索引
-    final ArrayList<String> constStringPool = new ArrayList<>();
-    private final HashMap<String, Integer> constStringPoolIndexMap = new HashMap<>();
-
-
     private void makeConstStringPool() {
         //常量字符串
         constStringPool.addAll(constantStrings);
@@ -346,7 +356,6 @@ public class References {
             constStringPoolIndexMap.put(constStringPool.get(i), i);
         }
     }
-
 
     public List<String> getConstantStringPool() {
         return constStringPool;
@@ -359,10 +368,6 @@ public class References {
         }
         return integer;
     }
-
-
-    private final ArrayList<String> typePool = new ArrayList<>();
-    private final HashMap<String, Integer> typePoolIndexMap = new HashMap<>();
 
     private void makeTypePool() {
         final ArrayList<String> typePool = this.typePool;
@@ -402,10 +407,6 @@ public class References {
         return maxTypeLen;
     }
 
-    //保持跟type pool一致(顺序和大小)，className只是去掉L;的类型字符串，如果基本类型则不处理比如I,B
-    private final ArrayList<String> classNamePool = new ArrayList<>();
-    private final HashMap<String, Integer> classNamePoolIndexMap = new HashMap<>();
-
     private void makeClassNamePool() {
         for (String type : typePool) {
             classNamePool.add(typeToClassName(type));
@@ -429,10 +430,6 @@ public class References {
         return classNamePool;
     }
 
-    //方法签名及索引
-    private final ArrayList<String> signaturePool = new ArrayList<>();
-    private final HashMap<String, Integer> signaturePoolIndexMap = new HashMap<>();
-
     private void makeSignaturePool() {
         final ArrayList<String> classNamePool = this.signaturePool;
         classNamePool.addAll(signatureRefs);
@@ -454,9 +451,6 @@ public class References {
     public List<String> getSignaturePool() {
         return signaturePool;
     }
-
-    private final ArrayList<FieldReference> fieldPool = new ArrayList<>();
-    private final HashMap<FieldReference, Integer> fieldPoolIndexMap = new HashMap<>();
 
     private void makeFieldPool() {
         final ArrayList<FieldReference> fieldPool = this.fieldPool;
@@ -481,9 +475,6 @@ public class References {
     public List<FieldReference> getFieldPool() {
         return fieldPool;
     }
-
-    private final ArrayList<MethodReference> methodPool = new ArrayList<>();
-    private final HashMap<MethodReference, Integer> methodPoolIndexMap = new HashMap<>();
 
     private void makeMethodPool() {
         final ArrayList<MethodReference> methodPool = this.methodPool;

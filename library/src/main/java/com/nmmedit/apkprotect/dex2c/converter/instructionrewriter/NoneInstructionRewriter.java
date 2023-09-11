@@ -3,9 +3,10 @@ package com.nmmedit.apkprotect.dex2c.converter.instructionrewriter;
 import com.android.tools.smali.dexlib2.Opcode;
 import com.android.tools.smali.dexlib2.Opcodes;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.annotation.Nonnull;
 
 public class NoneInstructionRewriter extends InstructionRewriter {
     public NoneInstructionRewriter() {

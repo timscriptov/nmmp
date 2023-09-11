@@ -9,8 +9,41 @@ import com.android.tools.smali.dexlib2.iface.TryBlock;
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction;
 import com.android.tools.smali.dexlib2.iface.instruction.SwitchElement;
-import com.android.tools.smali.dexlib2.iface.instruction.formats.*;
-import com.android.tools.smali.dexlib2.iface.reference.*;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.ArrayPayload;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction10t;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction10x;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction11n;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction11x;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction12x;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction20bc;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction20t;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction21c;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction21ih;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction21lh;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction21s;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction21t;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction22b;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction22c;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction22cs;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction22s;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction22t;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction22x;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction23x;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction30t;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction31c;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction31i;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction31t;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction32x;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction35c;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction3rc;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction51l;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.PackedSwitchPayload;
+import com.android.tools.smali.dexlib2.iface.instruction.formats.SparseSwitchPayload;
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
+import com.android.tools.smali.dexlib2.iface.reference.Reference;
+import com.android.tools.smali.dexlib2.iface.reference.StringReference;
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference;
 import com.android.tools.smali.dexlib2.writer.DexDataWriter;
 import com.android.tools.smali.util.ExceptionWithContext;
 import com.google.common.collect.Maps;
@@ -19,13 +52,14 @@ import com.google.common.primitives.Ints;
 import com.nmmedit.apkprotect.dex2c.converter.ClassAnalyzer;
 import com.nmmedit.apkprotect.dex2c.converter.References;
 
-import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+
+import javax.annotation.Nonnull;
 
 /**
  * 继承它,实现replaceOpcode(int opcode)方法, 进行opcode替换
@@ -35,13 +69,22 @@ public abstract class InstructionRewriter {
 
 
     final Opcodes opcodes;
+    private final Comparator<SwitchElement> switchElementComparator = new Comparator<SwitchElement>() {
+        @Override
+        public int compare(SwitchElement element1, SwitchElement element2) {
+            return Ints.compare(element1.getKey(), element2.getKey());
+        }
+    };
     // 指令重写需要的引用信息
     private References references;
     private ClassAnalyzer classAnalyzer;
 
-
     public InstructionRewriter(@Nonnull Opcodes opcodes) {
         this.opcodes = opcodes;
+    }
+
+    private static int packNibbles(int a, int b) {
+        return (b << 4) | a;
     }
 
     public void loadReferences(
@@ -593,7 +636,6 @@ public abstract class InstructionRewriter {
         }
     }
 
-
     public void write(@Nonnull DexDataWriter writer,
                       @Nonnull Instruction3rc instruction) {
         try {
@@ -605,7 +647,6 @@ public abstract class InstructionRewriter {
             throw new RuntimeException(ex);
         }
     }
-
 
     public void write(@Nonnull DexDataWriter writer,
                       @Nonnull Instruction51l instruction) {
@@ -674,13 +715,6 @@ public abstract class InstructionRewriter {
         }
     }
 
-    private final Comparator<SwitchElement> switchElementComparator = new Comparator<SwitchElement>() {
-        @Override
-        public int compare(SwitchElement element1, SwitchElement element2) {
-            return Ints.compare(element1.getKey(), element2.getKey());
-        }
-    };
-
     public void write(@Nonnull DexDataWriter writer,
                       @Nonnull PackedSwitchPayload instruction) {
         try {
@@ -700,11 +734,6 @@ public abstract class InstructionRewriter {
             throw new RuntimeException(ex);
         }
     }
-
-    private static int packNibbles(int a, int b) {
-        return (b << 4) | a;
-    }
-
 
     private int getReferenceIndex(ReferenceInstruction referenceInstruction) {
         switch (referenceInstruction.getOpcode()) {

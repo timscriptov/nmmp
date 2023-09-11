@@ -19,7 +19,7 @@ public class ApkVerifyCodeGenerator {
         if (publicKey == null) {
             throw new RuntimeException("publicKey == null");
         }
-        final StringBuilder sb = new StringBuilder("");
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < publicKey.length; i++) {
             if (i % 10 == 0) {
                 sb.append("    \\\\\n    ");

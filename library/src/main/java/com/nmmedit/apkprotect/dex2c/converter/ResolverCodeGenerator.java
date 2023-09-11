@@ -6,12 +6,13 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.nmmedit.apkprotect.util.ModifiedUtf8;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.annotation.Nonnull;
 
 /**
  * 根据dex生成符号解析代码,比如字符串常量池,类型常量池这些
@@ -27,6 +28,15 @@ public class ResolverCodeGenerator {
     ) {
 
         references = new References(dexFile, analyzer);
+    }
+
+    static String stringEsc(String str) throws UTFDataFormatException {
+        byte[] bytes = ModifiedUtf8.encode(str);
+        StringBuilder sb = new StringBuilder(4 * bytes.length);
+        for (byte b : bytes) {
+            sb.append(String.format("\\x%02x", b & 0xFF));
+        }
+        return sb.toString();
     }
 
     public References getReferences() {
@@ -362,7 +372,6 @@ public class ResolverCodeGenerator {
         writer.write(String.format("static vmField gFields[%d];\n", fieldPool.size()));
     }
 
-
     private void generateStringPool(Writer writer) throws IOException {
         writer.write("static const u1 gBaseStrPtr[]={\n");
 
@@ -403,15 +412,6 @@ public class ResolverCodeGenerator {
         writer.write("//ends string ids\n\n");
 
         writer.flush();
-    }
-
-    static String stringEsc(String str) throws UTFDataFormatException {
-        byte[] bytes = ModifiedUtf8.encode(str);
-        StringBuilder sb = new StringBuilder(4 * bytes.length);
-        for (byte b : bytes) {
-            sb.append(String.format("\\x%02x", b & 0xFF));
-        }
-        return sb.toString();
     }
 
     private void generateTypePool(Writer writer) throws IOException {

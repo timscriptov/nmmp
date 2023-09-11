@@ -9,6 +9,7 @@ object Storage {
         get() {
             return File(File(FileHelper::class.java.protectionDomain.codeSource.location.toURI().path).parentFile.path)
         }
+
     @JvmStatic
     val binDir: File
         get() {
@@ -18,6 +19,7 @@ object Storage {
             }
             return dir
         }
+
     @JvmStatic
     val outRootDir: File
         get() {
@@ -27,6 +29,7 @@ object Storage {
             }
             return dir
         }
+
     @JvmStatic
     val zipExtractTempDir: File
         get() {
@@ -36,6 +39,7 @@ object Storage {
             }
             return dir
         }
+
     @JvmStatic
     val dex2cSrcDir: File
         get() {
@@ -45,6 +49,7 @@ object Storage {
             }
             return dir
         }
+
     @JvmStatic
     val codeGeneratedDir: File
         get() {
@@ -54,6 +59,7 @@ object Storage {
             }
             return dir
         }
+
     @JvmStatic
     val tempDexDir: File
         get() {

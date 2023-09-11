@@ -7,16 +7,26 @@ import com.android.tools.smali.dexlib2.base.reference.BaseMethodReference;
 import com.android.tools.smali.dexlib2.base.reference.BaseTypeReference;
 import com.android.tools.smali.dexlib2.builder.BuilderInstruction;
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation;
-import com.android.tools.smali.dexlib2.builder.instruction.*;
-import com.android.tools.smali.dexlib2.iface.*;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction10x;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction11n;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21s;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction31i;
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction35c;
+import com.android.tools.smali.dexlib2.iface.Annotation;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
+import com.android.tools.smali.dexlib2.iface.Field;
+import com.android.tools.smali.dexlib2.iface.Method;
+import com.android.tools.smali.dexlib2.iface.MethodImplementation;
+import com.android.tools.smali.dexlib2.iface.MethodParameter;
 import com.google.common.collect.Iterables;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * 给每个处理过的类添加静态块,注册本地方法
@@ -40,12 +50,24 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
         this.registerNativeMethodName = registerNativeMethodName;
     }
 
+    private static BuilderInstruction buildConstInst(int regA, int i) {
+        if (i < 0) {
+            throw new RuntimeException("invalid index " + i);
+        }
+        if (i <= 7) {
+            return new BuilderInstruction11n(Opcode.CONST_4, regA, i);
+        }
+        if (i <= 0x7fff) {
+            return new BuilderInstruction21s(Opcode.CONST_16, regA, i);
+        }
+        return new BuilderInstruction31i(Opcode.CONST, regA, i);
+    }
+
     @Nonnull
     @Override
     public String getType() {
         return classDef.getType();
     }
-
 
     @Override
     public int getAccessFlags() {
@@ -128,7 +150,6 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
     public Iterable<? extends Method> getMethods() {
         return Iterables.concat(getDirectMethods(), getVirtualMethods());
     }
-
 
     @Override
     public void validateReference() throws InvalidReferenceException {
@@ -260,19 +281,6 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
             return insns;
         }
 
-    }
-
-    private static BuilderInstruction buildConstInst(int regA, int i) {
-        if (i < 0) {
-            throw new RuntimeException("invalid index " + i);
-        }
-        if (i <= 7) {
-            return new BuilderInstruction11n(Opcode.CONST_4, regA, i);
-        }
-        if (i <= 0x7fff) {
-            return new BuilderInstruction21s(Opcode.CONST_16, regA, i);
-        }
-        return new BuilderInstruction31i(Opcode.CONST, regA, i);
     }
 
 }

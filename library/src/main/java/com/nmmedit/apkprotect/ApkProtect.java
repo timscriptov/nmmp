@@ -86,143 +86,6 @@ public class ApkProtect {
         new Preferences(Storage.getBinDir(), "preferences.json");
     }
 
-    public void run() throws IOException {
-        final File apkFile = apkFolders.inApk;
-        final File zipExtractDir = Storage.getZipExtractTempDir();
-
-        try {
-            final byte[] manifestBytes = ZipHelper.getZipFileContent(apkFile, ANDROID_MANIFEST_XML);
-
-            final ManifestParser parser = new ManifestParser(manifestBytes);
-            final String packageName = parser.getPackageName();
-
-            //生成一些需要改变的c代码(随机opcode后的头文件及apk验证代码等)
-            if (packageName != null && !packageName.isEmpty()) {
-                generateCSources(packageName);
-            }
-
-            //解压得到所有classesN.dex
-            List<File> files = getClassesFiles(apkFile, zipExtractDir);
-            if (files.isEmpty()) {
-                throw new RuntimeException("No classes.dex");
-            }
-            final String minSdk = parser.getMinSdkVersion();
-            if (minSdk != null && !minSdk.isEmpty()) {
-                try {
-                    classAnalyzer.setMinSdk(Integer.parseInt(minSdk));
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            //先加载apk包含的所有dex文件,以便分析一些有问题的代码
-            for (File file : files) {
-                classAnalyzer.loadDexFile(file);
-            }
-
-            //globalConfig里面configs顺序和classesN.dex文件列表一样
-            final GlobalDexConfig globalConfig = Dex2c.handleAllDex(files,
-                    filter,
-                    instructionRewriter,
-                    classAnalyzer,
-                    Storage.getCodeGeneratedDir());
-
-            //需要放在主dex里的类
-            final Set<String> mainDexClassTypeSet = new HashSet<>();
-            //todo 可能需要通过外部配置来保留主dex需要的class
-
-            //在处理过的class的静态初始化方法里插入调用注册本地方法的指令
-            //static {
-            //    NativeUtils.initClass(0);
-            //}
-
-            final ArrayList<File> outDexFiles = injectInstructionAndWriteToFile(
-                    globalConfig,
-                    mainDexClassTypeSet,
-                    60000,
-                    Storage.getTempDexDir());
-
-            final List<String> abis = getAbis(apkFile);
-
-            final Map<String, List<File>> nativeLibs = generateNativeLibs(abis);
-
-            File mainDex = outDexFiles.get(0);
-
-            final File newManDex = internNativeUtilClassDef(
-                    mainDex,
-                    globalConfig,
-                    BuildNativeLib.NMMP_NAME);
-            //替换为新的dex
-            outDexFiles.set(0, newManDex);
-
-            final File outputApk = apkFolders.outputApk;
-            if (outputApk.exists()) {
-                outputApk.delete();
-            }
-            try (
-                    //输出的zip文件
-                    final ZipArchive zipArchive = new ZipArchive(outputApk.toPath());
-            ) {
-                final ZipMap zipMap = ZipMap.from(apkFile.toPath());
-                //添加原apk不被修改的数据
-                zipCopy(zipMap, zipArchive, ZipSource.COMPRESSION_NO_CHANGE);
-
-                //add AndroidManifest.xml
-                final Source androidManifestSource = Sources.from(new ByteArrayInputStream(manifestBytes), ANDROID_MANIFEST_XML, Deflater.DEFAULT_COMPRESSION);
-                androidManifestSource.align(4);
-                zipArchive.add(androidManifestSource);
-
-                //add classesX.dex
-                for (File file : outDexFiles) {
-                    final Source source = Sources.from(file, file.getName(), Deflater.DEFAULT_COMPRESSION);
-                    source.align(4);
-                    zipArchive.add(source);
-                }
-
-                //add native libs
-                for (Map.Entry<String, List<File>> entry : nativeLibs.entrySet()) {
-                    final String abi = entry.getKey();
-                    for (File file : entry.getValue()) {
-                        //最小sdk如果不小于23,且AndroidManifest.xml里面没有android:extractNativeLibs="true", so不能压缩,且需要页对齐
-//                        final Source source = Sources.from(file, "lib/" + abi + "/" + file.getName(), Deflater.NO_COMPRESSION);
-//                        source.align(4*1024);
-                        //todo 增加处理不需要压缩的.so文件
-                        final Source source = Sources.from(file, "lib/" + abi + "/" + file.getName(), Deflater.DEFAULT_COMPRESSION);
-                        source.align(4);
-                        zipArchive.add(source);
-                    }
-
-                }
-            }
-        } finally {
-            //删除解压缓存目录
-            FileHelper.deleteFile(zipExtractDir);
-        }
-    }
-
-    public Map<String, List<File>> generateNativeLibs(@Nonnull final List<String> abis) throws IOException {
-        final File outRootDir = Storage.getOutRootDir();
-
-        final Map<String, List<File>> allLibs = new HashMap<>();
-
-        for (String abi : abis) {
-            final BuildNativeLib.CMakeOptions cmakeOptions = new BuildNativeLib.CMakeOptions(
-                    Prefs.cmakePath(),
-                    Prefs.sdkPath(),
-                    Prefs.ndkPath(), 21,
-                    outRootDir.getAbsolutePath(),
-                    BuildNativeLib.CMakeOptions.BuildType.RELEASE,
-                    abi);
-
-            //删除上次创建的目录
-            FileHelper.deleteFile(new File(cmakeOptions.getBuildPath()));
-
-            final List<File> files = new BuildNativeLib(apkLogger).build(cmakeOptions);
-            allLibs.put(abi, files);
-        }
-        return allLibs;
-    }
-
     private static boolean isEmpty(String s) {
         return s == null || "".equals(s);
     }
@@ -264,31 +127,6 @@ public class ApkProtect {
             return abi;
         }
         return new ArrayList<>(abis);
-    }
-
-    private void generateCSources(String packageName) throws IOException {
-        final File vmsrcFile = new File(Storage.getBinDir(), "vmsrc.zip");
-        //每次强制从资源里复制出来
-        //copy vmsrc.zip to external directory
-        InputStream inputStream = ApkProtect.class.getResourceAsStream("/vmsrc.zip");
-        if (inputStream != null) {
-            FileHelper.writeToFile(vmsrcFile, inputStream);
-        }
-        final List<File> cSources = ZipHelper.extractFiles(vmsrcFile, ".*", Storage.getDex2cSrcDir());
-
-        //处理指令及apk验证,生成新的c文件
-        for (File source : cSources) {
-            if (source.getName().endsWith("DexOpcodes.h")) {
-                //根据指令重写规则重新生成DexOpcodes.h文件
-                writeOpcodeHeaderFile(source, instructionRewriter);
-            } else if (source.getName().endsWith("apk_verifier.c")) {
-                //根据公钥数据生成签名验证代码
-                writeApkVerifierFile(packageName, source, apkVerifyCodeGenerator);
-            } else if (source.getName().equals("CMakeLists.txt")) {
-                //处理cmake里配置的本地库名
-                writeCmakeFile(source, BuildNativeLib.NMMP_NAME);
-            }
-        }
     }
 
     private static @NotNull List<File> getClassesFiles(File apkFile, File zipExtractDir) throws IOException {
@@ -376,7 +214,6 @@ public class ApkProtect {
             fileWriter.write(lines);
         }
     }
-
 
     private static @NotNull File dexWriteToFile(DexPool dexPool, int index, @NotNull File dexOutDir) throws IOException {
         if (!dexOutDir.exists()) dexOutDir.mkdirs();
@@ -560,6 +397,168 @@ public class ApkProtect {
     @Contract(pure = true)
     private static @NotNull String classDotNameToType(@NotNull String classDotName) {
         return "L" + classDotName.replace('.', '/') + ";";
+    }
+
+    public void run() throws IOException {
+        final File apkFile = apkFolders.inApk;
+        final File zipExtractDir = Storage.getZipExtractTempDir();
+
+        try {
+            final byte[] manifestBytes = ZipHelper.getZipFileContent(apkFile, ANDROID_MANIFEST_XML);
+
+            final ManifestParser parser = new ManifestParser(manifestBytes);
+            final String packageName = parser.getPackageName();
+
+            //生成一些需要改变的c代码(随机opcode后的头文件及apk验证代码等)
+            if (packageName != null && !packageName.isEmpty()) {
+                generateCSources(packageName);
+            }
+
+            //解压得到所有classesN.dex
+            List<File> files = getClassesFiles(apkFile, zipExtractDir);
+            if (files.isEmpty()) {
+                throw new RuntimeException("No classes.dex");
+            }
+            final String minSdk = parser.getMinSdkVersion();
+            if (minSdk != null && !minSdk.isEmpty()) {
+                try {
+                    classAnalyzer.setMinSdk(Integer.parseInt(minSdk));
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            //先加载apk包含的所有dex文件,以便分析一些有问题的代码
+            for (File file : files) {
+                classAnalyzer.loadDexFile(file);
+            }
+
+            //globalConfig里面configs顺序和classesN.dex文件列表一样
+            final GlobalDexConfig globalConfig = Dex2c.handleAllDex(files,
+                    filter,
+                    instructionRewriter,
+                    classAnalyzer,
+                    Storage.getCodeGeneratedDir());
+
+            //需要放在主dex里的类
+            final Set<String> mainDexClassTypeSet = new HashSet<>();
+            //todo 可能需要通过外部配置来保留主dex需要的class
+
+            //在处理过的class的静态初始化方法里插入调用注册本地方法的指令
+            //static {
+            //    NativeUtils.initClass(0);
+            //}
+
+            final ArrayList<File> outDexFiles = injectInstructionAndWriteToFile(
+                    globalConfig,
+                    mainDexClassTypeSet,
+                    60000,
+                    Storage.getTempDexDir());
+
+            final List<String> abis = getAbis(apkFile);
+
+            final Map<String, List<File>> nativeLibs = generateNativeLibs(abis);
+
+            File mainDex = outDexFiles.get(0);
+
+            final File newManDex = internNativeUtilClassDef(
+                    mainDex,
+                    globalConfig,
+                    BuildNativeLib.NMMP_NAME);
+            //替换为新的dex
+            outDexFiles.set(0, newManDex);
+
+            final File outputApk = apkFolders.outputApk;
+            if (outputApk.exists()) {
+                outputApk.delete();
+            }
+            try (
+                    //输出的zip文件
+                    final ZipArchive zipArchive = new ZipArchive(outputApk.toPath());
+            ) {
+                final ZipMap zipMap = ZipMap.from(apkFile.toPath());
+                //添加原apk不被修改的数据
+                zipCopy(zipMap, zipArchive, ZipSource.COMPRESSION_NO_CHANGE);
+
+                //add AndroidManifest.xml
+                final Source androidManifestSource = Sources.from(new ByteArrayInputStream(manifestBytes), ANDROID_MANIFEST_XML, Deflater.DEFAULT_COMPRESSION);
+                androidManifestSource.align(4);
+                zipArchive.add(androidManifestSource);
+
+                //add classesX.dex
+                for (File file : outDexFiles) {
+                    final Source source = Sources.from(file, file.getName(), Deflater.DEFAULT_COMPRESSION);
+                    source.align(4);
+                    zipArchive.add(source);
+                }
+
+                //add native libs
+                for (Map.Entry<String, List<File>> entry : nativeLibs.entrySet()) {
+                    final String abi = entry.getKey();
+                    for (File file : entry.getValue()) {
+                        //最小sdk如果不小于23,且AndroidManifest.xml里面没有android:extractNativeLibs="true", so不能压缩,且需要页对齐
+//                        final Source source = Sources.from(file, "lib/" + abi + "/" + file.getName(), Deflater.NO_COMPRESSION);
+//                        source.align(4*1024);
+                        //todo 增加处理不需要压缩的.so文件
+                        final Source source = Sources.from(file, "lib/" + abi + "/" + file.getName(), Deflater.DEFAULT_COMPRESSION);
+                        source.align(4);
+                        zipArchive.add(source);
+                    }
+
+                }
+            }
+        } finally {
+            //删除解压缓存目录
+            FileHelper.deleteFile(zipExtractDir);
+        }
+    }
+
+    public Map<String, List<File>> generateNativeLibs(@Nonnull final List<String> abis) throws IOException {
+        final File outRootDir = Storage.getOutRootDir();
+
+        final Map<String, List<File>> allLibs = new HashMap<>();
+
+        for (String abi : abis) {
+            final BuildNativeLib.CMakeOptions cmakeOptions = new BuildNativeLib.CMakeOptions(
+                    Prefs.cmakePath(),
+                    Prefs.sdkPath(),
+                    Prefs.ndkPath(), 21,
+                    outRootDir.getAbsolutePath(),
+                    BuildNativeLib.CMakeOptions.BuildType.RELEASE,
+                    abi);
+
+            //删除上次创建的目录
+            FileHelper.deleteFile(new File(cmakeOptions.getBuildPath()));
+
+            final List<File> files = new BuildNativeLib(apkLogger).build(cmakeOptions);
+            allLibs.put(abi, files);
+        }
+        return allLibs;
+    }
+
+    private void generateCSources(String packageName) throws IOException {
+        final File vmsrcFile = new File(Storage.getBinDir(), "vmsrc.zip");
+        //每次强制从资源里复制出来
+        //copy vmsrc.zip to external directory
+        InputStream inputStream = ApkProtect.class.getResourceAsStream("/vmsrc.zip");
+        if (inputStream != null) {
+            FileHelper.writeToFile(vmsrcFile, inputStream);
+        }
+        final List<File> cSources = ZipHelper.extractFiles(vmsrcFile, ".*", Storage.getDex2cSrcDir());
+
+        //处理指令及apk验证,生成新的c文件
+        for (File source : cSources) {
+            if (source.getName().endsWith("DexOpcodes.h")) {
+                //根据指令重写规则重新生成DexOpcodes.h文件
+                writeOpcodeHeaderFile(source, instructionRewriter);
+            } else if (source.getName().endsWith("apk_verifier.c")) {
+                //根据公钥数据生成签名验证代码
+                writeApkVerifierFile(packageName, source, apkVerifyCodeGenerator);
+            } else if (source.getName().equals("CMakeLists.txt")) {
+                //处理cmake里配置的本地库名
+                writeCmakeFile(source, BuildNativeLib.NMMP_NAME);
+            }
+        }
     }
 
     public static class Builder {

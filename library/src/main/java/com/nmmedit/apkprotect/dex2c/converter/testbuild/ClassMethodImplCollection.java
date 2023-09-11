@@ -1,14 +1,19 @@
 package com.nmmedit.apkprotect.dex2c.converter.testbuild;
 
-import com.android.tools.smali.dexlib2.iface.*;
+import com.android.tools.smali.dexlib2.iface.Annotation;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
+import com.android.tools.smali.dexlib2.iface.Field;
+import com.android.tools.smali.dexlib2.iface.Method;
+import com.android.tools.smali.dexlib2.iface.MethodImplementation;
 import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.nmmedit.apkprotect.dex2c.converter.MyMethodUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * 收集方法具体代码,把它放入全新的dex中

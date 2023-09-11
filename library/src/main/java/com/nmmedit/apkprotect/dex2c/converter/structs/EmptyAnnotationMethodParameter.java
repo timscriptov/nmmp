@@ -2,11 +2,13 @@ package com.nmmedit.apkprotect.dex2c.converter.structs;
 
 import com.android.tools.smali.dexlib2.base.BaseMethodParameter;
 import com.android.tools.smali.dexlib2.iface.Annotation;
+
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Set;
+
+import javax.annotation.Nonnull;
 
 public class EmptyAnnotationMethodParameter extends BaseMethodParameter {
     //不用记录参数名称
