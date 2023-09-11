@@ -2,6 +2,7 @@ package com.nmmedit.apkprotect.dex2c;
 
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.google.common.collect.HashMultimap;
+import com.nmmedit.apkprotect.data.Prefs;
 import com.nmmedit.apkprotect.dex2c.converter.JniCodeGenerator;
 
 import org.jetbrains.annotations.NotNull;
@@ -49,7 +50,7 @@ public class DexConfig {
     //每个处理过的class,需要调用这个类里的注册函数,注册函数名和classes.dex相关
     @NotNull
     public String getRegisterNativesClassName() {
-        return "com/nmmedit/protect/NativeUtil";
+        return Prefs.getRegisterNativesClassName();
     }
 
     @NotNull

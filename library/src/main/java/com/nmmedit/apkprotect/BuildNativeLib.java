@@ -14,12 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class BuildNativeLib {
-    //库名称
-    public static final String NMMP_NAME = "nmmp";
-
-    //
-    //虚拟机库名称,如果cmake里配置为静态库,这个可以忽略
-    public static final String VM_NAME = "nmmvm";
 
     private final ApkLogger apkLogger;
 
@@ -190,9 +184,9 @@ public class BuildNativeLib {
         //最后输出的so文件
         public List<File> getSharedObjectFile() {
             //linux,etc.
-            final String vmLibName = "lib" + VM_NAME + ".so";
+            final String vmLibName = "lib" + Prefs.getVmName() + ".so";
 
-            final String nmmpLibName = "lib" + NMMP_NAME + ".so";
+            final String nmmpLibName = "lib" + Prefs.getNmmpName() + ".so";
 
             File vmSo = new File(getLibOutputDir(), vmLibName);
             File mpSo = new File(getLibOutputDir(), nmmpLibName);

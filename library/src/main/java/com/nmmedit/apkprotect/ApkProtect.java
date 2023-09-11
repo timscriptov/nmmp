@@ -464,7 +464,7 @@ public class ApkProtect {
             final File newManDex = internNativeUtilClassDef(
                     mainDex,
                     globalConfig,
-                    BuildNativeLib.NMMP_NAME);
+                    Prefs.getNmmpName());
             //替换为新的dex
             outDexFiles.set(0, newManDex);
 
@@ -556,7 +556,7 @@ public class ApkProtect {
                 writeApkVerifierFile(packageName, source, apkVerifyCodeGenerator);
             } else if (source.getName().equals("CMakeLists.txt")) {
                 //处理cmake里配置的本地库名
-                writeCmakeFile(source, BuildNativeLib.NMMP_NAME);
+                writeCmakeFile(source, Prefs.getVmName());
             }
         }
     }

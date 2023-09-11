@@ -37,6 +37,33 @@ object Prefs {
         }
 
     @JvmStatic
+    var vmName: String = "nmmvm"
+        get() = Preferences.getString("vm_name", "nmmvm")
+        set(value) {
+            Preferences.putString("vm_name", value)
+            field = value
+        }
+
+    @JvmStatic
+    var registerNativesClassName: String = "com/nmmedit/protect/NativeUtil"
+        get() = Preferences.getString(
+            "register_natives_class_name",
+            "com/nmmedit/protect/NativeUtil"
+        )
+        set(value) {
+            Preferences.putString("register_natives_class_name", value)
+            field = value
+        }
+
+    @JvmStatic
+    var nmmpName: String = "nmmp"
+        get() = Preferences.getString("nmmp_name", "nmmp")
+        set(value) {
+            Preferences.putString("nmmp_name", value)
+            field = value
+        }
+
+    @JvmStatic
     fun sdkPath(): String {
         return Preferences.getString("sdk_path", System.getenv("ANDROID_SDK_HOME") ?: "")
     }
