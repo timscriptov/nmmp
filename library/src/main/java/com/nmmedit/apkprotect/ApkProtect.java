@@ -110,18 +110,18 @@ public class ApkProtect {
         if (abis.isEmpty()) {
             //默认只生成armeabi-v7a
             final ArrayList<String> abi = new ArrayList<>();
-            if (Prefs.getArm()) {
+            if (Prefs.isArm()) {
                 abi.add("armeabi-v7a");
             }
-            if (Prefs.getArm64()) {
+            if (Prefs.isArm64()) {
                 abi.add("arm64-v8a");
             }
 
-            if (Prefs.getX86()) {
+            if (Prefs.isX86()) {
                 abi.add("x86");
             }
 
-            if (Prefs.getX64()) {
+            if (Prefs.isX64()) {
                 abi.add("x86_64");
             }
             return abi;
@@ -523,9 +523,9 @@ public class ApkProtect {
 
         for (String abi : abis) {
             final BuildNativeLib.CMakeOptions cmakeOptions = new BuildNativeLib.CMakeOptions(
-                    Prefs.cmakePath(),
+                    Prefs.getCmakePath(),
                     Prefs.sdkPath(),
-                    Prefs.ndkPath(), 21,
+                    Prefs.getNdkPath(), 21,
                     outRootDir.getAbsolutePath(),
                     BuildNativeLib.CMakeOptions.BuildType.RELEASE,
                     abi);

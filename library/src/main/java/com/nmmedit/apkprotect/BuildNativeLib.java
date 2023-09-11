@@ -149,8 +149,8 @@ public class BuildNativeLib {
         }
 
         public String getStripBinaryPath() {
-            return new File(getNdkHome(), Prefs.ndkToolchains() + "/" +
-                    Prefs.ndkAbi() + "/" + Prefs.ndkStrip()).getAbsolutePath();
+            return new File(getNdkHome(), Prefs.getNdkToolchains() + "/" +
+                    Prefs.getNdkAbi() + "/" + Prefs.getNdkStrip()).getAbsolutePath();
         }
 
         public String getCmakeBinaryPath() {

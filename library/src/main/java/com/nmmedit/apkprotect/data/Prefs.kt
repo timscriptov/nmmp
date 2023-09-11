@@ -5,63 +5,77 @@ import com.nmmedit.apkprotect.util.OsDetector
 
 object Prefs {
     @JvmStatic
-    var arm: Boolean = true
-        get() = Preferences.getBoolean("arm", true)
-        set(value) {
-            Preferences.putBoolean("arm", value)
-            field = value
-        }
+    fun isArm(): Boolean {
+        return Preferences.getBoolean("arm", true)
+    }
 
     @JvmStatic
-    var arm64: Boolean = true
-        get() = Preferences.getBoolean("arm64", true)
-        set(value) {
-            Preferences.putBoolean("arm64", value)
-            field = value
-        }
+    fun setArm(mode: Boolean) {
+        Preferences.putBoolean("arm", mode)
+    }
 
     @JvmStatic
-    var x86: Boolean = true
-        get() = Preferences.getBoolean("x86", true)
-        set(value) {
-            Preferences.putBoolean("x86", value)
-            field = value
-        }
+    fun isArm64(): Boolean {
+        return Preferences.getBoolean("arm64", true)
+    }
 
     @JvmStatic
-    var x64: Boolean = true
-        get() = Preferences.getBoolean("x64", true)
-        set(value) {
-            Preferences.putBoolean("x64", value)
-            field = value
-        }
+    fun setArm64(mode: Boolean) {
+        Preferences.putBoolean("arm64", mode)
+    }
 
     @JvmStatic
-    var vmName: String = "nmmvm"
-        get() = Preferences.getString("vm_name", "nmmvm")
-        set(value) {
-            Preferences.putString("vm_name", value)
-            field = value
-        }
+    fun isX86(): Boolean {
+        return Preferences.getBoolean("x86", true)
+    }
 
     @JvmStatic
-    var registerNativesClassName: String = "com/nmmedit/protect/NativeUtil"
-        get() = Preferences.getString(
+    fun setX86(mode: Boolean) {
+        Preferences.putBoolean("x86", mode)
+    }
+
+    @JvmStatic
+    fun isX64(): Boolean {
+        return Preferences.getBoolean("x64", true)
+    }
+
+    @JvmStatic
+    fun setX64(mode: Boolean) {
+        Preferences.putBoolean("x64", mode)
+    }
+
+    @JvmStatic
+    fun getVmName(): String {
+        return Preferences.getString("vm_name", "nmmvm")
+    }
+
+    @JvmStatic
+    fun setVmName(path: String) {
+        Preferences.putString("vm_name", path)
+    }
+
+    @JvmStatic
+    fun getNmmpName(): String {
+        return Preferences.getString("nmmp_name", "nmmp")
+    }
+
+    @JvmStatic
+    fun setNmmpName(path: String) {
+        Preferences.putString("nmmp_name", path)
+    }
+
+    @JvmStatic
+    fun getRegisterNativesClassName(): String {
+        return Preferences.getString(
             "register_natives_class_name",
             "com/nmmedit/protect/NativeUtil"
         )
-        set(value) {
-            Preferences.putString("register_natives_class_name", value)
-            field = value
-        }
+    }
 
     @JvmStatic
-    var nmmpName: String = "nmmp"
-        get() = Preferences.getString("nmmp_name", "nmmp")
-        set(value) {
-            Preferences.putString("nmmp_name", value)
-            field = value
-        }
+    fun setRegisterNativesClassName(path: String) {
+        Preferences.putString("register_natives_class_name", path)
+    }
 
     @JvmStatic
     fun sdkPath(): String {
@@ -74,7 +88,7 @@ object Prefs {
     }
 
     @JvmStatic
-    fun cmakePath(): String {
+    fun getCmakePath(): String {
         return Preferences.getString("cmake_path", System.getenv("CMAKE_PATH") ?: "")
     }
 
@@ -84,7 +98,7 @@ object Prefs {
     }
 
     @JvmStatic
-    fun ndkPath(): String {
+    fun getNdkPath(): String {
         return Preferences.getString("ndk_path", System.getenv("ANDROID_NDK_HOME") ?: "")
     }
 
@@ -94,12 +108,12 @@ object Prefs {
     }
 
     @JvmStatic
-    fun ndkToolchains(): String {
+    fun getNdkToolchains(): String {
         return Preferences.getString("toolchains", "/toolchains/llvm/prebuilt/")
     }
 
     @JvmStatic
-    fun ndkAbi(): String {
+    fun getNdkAbi(): String {
         return Preferences.getString(
             "abi",
             if (OsDetector.isWindows) {
@@ -111,7 +125,7 @@ object Prefs {
     }
 
     @JvmStatic
-    fun ndkStrip(): String {
+    fun getNdkStrip(): String {
         return Preferences.getString("strip", "/bin/llvm-strip")
     }
 }
