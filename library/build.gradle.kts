@@ -19,7 +19,6 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.ow2.asm:asm:9.5")
     implementation("com.android.tools:r8:8.1.56")
-    implementation("com.android:zipflinger:8.1.1")
 }
 
 publishing {
@@ -27,7 +26,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.mcal"
             artifactId = "nmmp"
-            version = "1.2.7"
+            version = "1.2.8"
 
             afterEvaluate {
                 from(components["java"])

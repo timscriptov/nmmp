@@ -4,8 +4,6 @@ import com.mcal.apkparser.zip.ZipFile
 import java.io.*
 import java.util.*
 import java.util.regex.Pattern
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
 
 object ZipHelper {
     /**
@@ -106,37 +104,6 @@ object ZipHelper {
                 }
             }
             return result
-        }
-    }
-
-    @JvmStatic
-    @Throws(IOException::class)
-    fun extractFiles(inputStream: InputStream, regex: String, outDir: File): List<File> {
-        return extractFiles(inputStream, Pattern.compile(regex), outDir)
-    }
-
-    @JvmStatic
-    @Throws(IOException::class)
-    fun extractFiles(inputStream: InputStream, regex: Pattern, outDir: File): List<File> {
-        ZipInputStream(inputStream).use { apkInput ->
-            BufferedInputStream(apkInput).use { bis ->
-                val result = LinkedList<File>()
-                var entry: ZipEntry
-                while (apkInput.nextEntry.also { entry = it } != null) {
-                    if (!entry.isDirectory && regex.matcher(entry.name).matches()) {
-                        val file = File(outDir, entry.name)
-                        if (!file.parentFile.exists()) {
-                            file.parentFile.mkdirs()
-                        }
-                        FileOutputStream(file).use { output ->
-                            copyStream(bis, output)
-                            result.add(file)
-                        }
-                    }
-                    apkInput.closeEntry()
-                }
-                return result
-            }
         }
     }
 

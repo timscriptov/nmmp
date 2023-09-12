@@ -11,7 +11,7 @@ import java.io.*
 import java.util.*
 
 class BuildNativeLib(
-    private val apkLogger: ApkLogger
+    private val apkLogger: ApkLogger?
 ) {
     //编译出native lib，同时返回最后的so文件
     @Throws(IOException::class)
@@ -66,7 +66,7 @@ class BuildNativeLib(
         val reader = BufferedReader(InputStreamReader(inputStream))
         var line: String?
         while (reader.readLine().also { line = it } != null) {
-            apkLogger.info(line)
+            apkLogger?.info(line)
             println(line)
         }
     }
