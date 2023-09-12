@@ -1,4 +1,3 @@
-import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -22,7 +21,6 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                @OptIn(ExperimentalComposeLibrary::class)
                 implementation(compose.material3)
 
                 implementation(project(":library"))
@@ -40,7 +38,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "nmmp"
-            packageVersion = "1.2.5"
+            packageVersion = "1.2.6"
             description = "Android APK Protector"
             copyright = "© 2023 timscriptov."
             vendor = "timscriptov"

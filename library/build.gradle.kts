@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.TimScriptov:apkparser:1.2.4")
+    implementation("com.github.TimScriptov:apkparser:1.2.5")
     implementation("com.github.TimScriptov:preferences:1.0.1")
     implementation("com.android.tools.smali:smali-dexlib2:3.0.3")
     implementation("org.jetbrains:annotations:24.0.1")
