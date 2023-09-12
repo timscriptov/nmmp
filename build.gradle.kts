@@ -1,3 +1,4 @@
+import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -5,14 +6,11 @@ plugins {
     id("org.jetbrains.compose")
 }
 
-group = "com.mcal"
-version = "1.0-SNAPSHOT"
-
 repositories {
     google()
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-    maven { url = uri("https://www.jitpack.io" ) }
+    maven { url = uri("https://www.jitpack.io") }
 }
 
 kotlin {
@@ -24,10 +22,12 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+                @OptIn(ExperimentalComposeLibrary::class)
                 implementation(compose.material3)
 
                 implementation(project(":library"))
+
+                implementation("com.github.TimScriptov:preferences:1.0.1")
             }
         }
         val jvmTest by getting
@@ -40,7 +40,11 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "nmmp"
-            packageVersion = "1.0.0"
+            packageVersion = "1.2.4"
+            description = "Android app protector"
+            copyright = "© 2023 timscriptov."
+            vendor = "timscriptov"
         }
+        jvmArgs("-Djdk.util.zip.disableZip64ExtraFieldValidation=true")
     }
 }

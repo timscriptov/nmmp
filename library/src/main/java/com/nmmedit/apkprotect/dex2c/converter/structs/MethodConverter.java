@@ -17,12 +17,11 @@ import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.nmmedit.apkprotect.dex2c.converter.ClassAnalyzer;
 import com.nmmedit.apkprotect.util.Pair;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import javax.annotation.Nonnull;
 
 public class MethodConverter {
 

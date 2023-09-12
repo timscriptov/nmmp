@@ -3,12 +3,11 @@ package com.nmmedit.apkprotect.dex2c.converter.instructionrewriter;
 import com.android.tools.smali.dexlib2.Opcode;
 import com.android.tools.smali.dexlib2.Opcodes;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Random;
-
-import javax.annotation.Nonnull;
 
 public class RandomInstructionRewriter extends InstructionRewriter {
     private final List<Opcode> opcodeList = new ArrayList<>(256);

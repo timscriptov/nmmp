@@ -16,15 +16,9 @@ import com.nmmedit.apkprotect.dex2c.converter.structs.MyClassDef;
 import com.nmmedit.apkprotect.dex2c.converter.structs.RegisterNativesCallerClassDef;
 import com.nmmedit.apkprotect.dex2c.filters.ClassAndMethodFilter;
 import com.nmmedit.apkprotect.util.Pair;
-
 import org.jetbrains.annotations.NotNull;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

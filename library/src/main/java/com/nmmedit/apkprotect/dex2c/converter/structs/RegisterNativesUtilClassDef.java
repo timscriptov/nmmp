@@ -4,20 +4,14 @@ import com.android.tools.smali.dexlib2.AccessFlags;
 import com.android.tools.smali.dexlib2.HiddenApiRestriction;
 import com.android.tools.smali.dexlib2.base.reference.BaseMethodReference;
 import com.android.tools.smali.dexlib2.base.reference.BaseTypeReference;
-import com.android.tools.smali.dexlib2.iface.Annotation;
-import com.android.tools.smali.dexlib2.iface.ClassDef;
-import com.android.tools.smali.dexlib2.iface.Field;
-import com.android.tools.smali.dexlib2.iface.Method;
-import com.android.tools.smali.dexlib2.iface.MethodImplementation;
-import com.android.tools.smali.dexlib2.iface.MethodParameter;
+import com.android.tools.smali.dexlib2.iface.*;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * 每个类调用的静态初始化方法,一般情况一个classes.dex对应一个注册方法

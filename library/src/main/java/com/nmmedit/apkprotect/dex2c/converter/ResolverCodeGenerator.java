@@ -6,13 +6,12 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.nmmedit.apkprotect.util.ModifiedUtf8;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.annotation.Nonnull;
 
 /**
  * 根据dex生成符号解析代码,比如字符串常量池,类型常量池这些

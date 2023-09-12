@@ -8,13 +8,12 @@ import com.android.tools.smali.dexlib2.iface.Field;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.google.common.collect.Iterators;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.AbstractCollection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 
 public class MyClassDef extends BaseTypeReference implements ClassDef {

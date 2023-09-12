@@ -12,10 +12,7 @@ repositories {
 
 dependencies {
     implementation("com.github.TimScriptov:apkparser:1.2.4")
-    implementation("com.github.TimScriptov:preferences:1.0.1")// {
-        //exclude(module = "kotlinx-serialization-core-jvm")
-        //exclude(module = "kotlinx-serialization-json-jvm")
-    //}
+    implementation("com.github.TimScriptov:preferences:1.0.1")
     implementation("com.android.tools.smali:smali-dexlib2:3.0.3")
     implementation("org.jetbrains:annotations:24.0.1")
     implementation("com.google.guava:guava:31.1-jre")
@@ -41,7 +38,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.mcal"
             artifactId = "nmmp"
-            version = "1.2.3"
+            version = "1.2.4"
 
             afterEvaluate {
                 from(components["java"])

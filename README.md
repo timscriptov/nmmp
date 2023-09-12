@@ -3,28 +3,59 @@
 ## Original REPO:
 https://github.com/maoabc/nmmp
 
+# Screenshots
+![Main](/ART/Screenshot.png)
+
 ## Add it in your root build.gradle at the end of repositories:
 ```groovy
-    allprojects {
-        repositories {
-            //...
-            maven { url 'https://jitpack.io' }
-        }
+allprojects {
+    repositories {
+        maven { url 'https://jitpack.io' }
     }
+}
 ```
 
-## Add the dependency
+## Add the dependency:
 ```groovy
-    dependencies {
-        implementation 'com.github.TimScriptov:nmmp:Tag'
-    }
+dependencies {
+    implementation("com.github.TimScriptov:nmmp:Tag")
+    implementation("com.github.TimScriptov:preferences:Tag")
+}
 ```
 
-## Convert byte-code to native
+## Init preferences:
 ```kotlin
-    Nmmp(File("path/in.apk"), File("path/out.apk"), File("path/rules.txt"), File("path/mapping.txt"), null/*ApkLogger*/).obfuscate()
+ Preferences(File("path"), "name.json").init()
 ```
 
-```java
-    new Nmmp(new File("path/in.apk"), new File("path/out.apk"), new File("path/rules.txt"), new File("path/mapping.txt"), null/*ApkLogger*/).obfuscate();
+## Environment path:
+```kotlin
+Prefs.setSdkPath("path") // ANDROID_SDK_HOME
+Prefs.setCmakePath("path") // CMAKE_PATH
+Prefs.setNdkPath("path") // ANDROID_NDK_HOME
+```
+
+## Change lib name and class name:
+```kotlin
+Prefs.setRegisterNativesClassName("com/nmmedit/protect/NativeUtil")
+Prefs.setVmName("nmmvm")
+Prefs.setNmmpName("nmmp")
+```
+
+## Convert byte-code to native:
+```kotlin
+val input = File("input.apk")
+val output = File("output.apk")
+val rules = File("rules.txt")
+val simpleRules = SimpleRules().apply {
+    parse(InputStreamReader(FileInputStream(rules), StandardCharsets.UTF_8))
+}
+val filterConfig = SimpleConvertConfig(BasicKeepConfig(), simpleRules)
+ApkProtect.Builder(ApkFolders(input, output)).apply {
+    setInstructionRewriter(RandomInstructionRewriter())
+    setApkVerifyCodeGenerator(null)
+    setFilter(filterConfig)
+    setLogger(null)
+    setClassAnalyzer(ClassAnalyzer())
+}.build().run()
 ```

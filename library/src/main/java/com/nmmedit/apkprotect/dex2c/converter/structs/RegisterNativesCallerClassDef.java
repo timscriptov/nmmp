@@ -7,26 +7,16 @@ import com.android.tools.smali.dexlib2.base.reference.BaseMethodReference;
 import com.android.tools.smali.dexlib2.base.reference.BaseTypeReference;
 import com.android.tools.smali.dexlib2.builder.BuilderInstruction;
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation;
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction10x;
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction11n;
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21s;
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction31i;
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction35c;
-import com.android.tools.smali.dexlib2.iface.Annotation;
-import com.android.tools.smali.dexlib2.iface.ClassDef;
-import com.android.tools.smali.dexlib2.iface.Field;
-import com.android.tools.smali.dexlib2.iface.Method;
-import com.android.tools.smali.dexlib2.iface.MethodImplementation;
-import com.android.tools.smali.dexlib2.iface.MethodParameter;
+import com.android.tools.smali.dexlib2.builder.instruction.*;
+import com.android.tools.smali.dexlib2.iface.*;
 import com.google.common.collect.Iterables;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * 给每个处理过的类添加静态块,注册本地方法

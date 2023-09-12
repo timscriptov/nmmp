@@ -4,7 +4,6 @@ import com.android.tools.smali.dexlib2.iface.Method;
 import com.google.common.collect.HashMultimap;
 import com.nmmedit.apkprotect.data.Prefs;
 import com.nmmedit.apkprotect.dex2c.converter.JniCodeGenerator;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;

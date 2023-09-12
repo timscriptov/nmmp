@@ -4,9 +4,8 @@ import com.android.tools.smali.dexlib2.AccessFlags;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.android.tools.smali.util.Hex;
 
-import java.util.List;
-
 import javax.annotation.Nonnull;
+import java.util.List;
 
 public class MyMethodUtil {
     public static boolean isConstructorOrAbstract(Method method) {

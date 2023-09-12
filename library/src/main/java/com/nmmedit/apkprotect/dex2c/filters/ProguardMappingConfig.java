@@ -10,13 +10,12 @@ import com.google.common.collect.Sets;
 import com.nmmedit.apkprotect.deobfus.MappingProcessor;
 import com.nmmedit.apkprotect.deobfus.MappingReader;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.annotation.Nonnull;
 
 /**
  * 读取proguard的mapping.txt文件,根据它得到class和方法名混淆前后映射关系,然后再执行过滤规则

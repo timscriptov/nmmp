@@ -78,7 +78,7 @@ object Prefs {
     }
 
     @JvmStatic
-    fun sdkPath(): String {
+    fun getSdkPath(): String {
         return Preferences.getString("sdk_path", System.getenv("ANDROID_SDK_HOME") ?: "")
     }
 

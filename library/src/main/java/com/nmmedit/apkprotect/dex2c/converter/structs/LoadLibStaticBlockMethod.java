@@ -15,12 +15,11 @@ import com.android.tools.smali.dexlib2.iface.MethodParameter;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableStringReference;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 //静态初始化方法
 public class LoadLibStaticBlockMethod extends BaseMethodReference implements Method {

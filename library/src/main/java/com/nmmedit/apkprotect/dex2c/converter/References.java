@@ -2,12 +2,7 @@ package com.nmmedit.apkprotect.dex2c.converter;
 
 import com.android.tools.smali.dexlib2.AccessFlags;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
-import com.android.tools.smali.dexlib2.iface.ClassDef;
-import com.android.tools.smali.dexlib2.iface.ExceptionHandler;
-import com.android.tools.smali.dexlib2.iface.Field;
-import com.android.tools.smali.dexlib2.iface.Method;
-import com.android.tools.smali.dexlib2.iface.MethodImplementation;
-import com.android.tools.smali.dexlib2.iface.TryBlock;
+import com.android.tools.smali.dexlib2.iface.*;
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction;
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
@@ -18,14 +13,9 @@ import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.google.common.collect.Sets;
 import com.nmmedit.apkprotect.util.ModifiedUtf8;
 
-import java.io.UTFDataFormatException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-
 import javax.annotation.Nonnull;
+import java.io.UTFDataFormatException;
+import java.util.*;
 
 
 //用于收集引用，生成c结构体同时用于指令重写时提供引用索引

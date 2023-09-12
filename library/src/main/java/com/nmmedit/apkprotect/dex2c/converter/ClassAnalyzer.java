@@ -14,15 +14,14 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableFieldReference;
 import com.google.common.collect.Maps;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 //目前用于分析接口静态域，后面可能其他用途
 //需要添加多个dex文件,以便完整分析class

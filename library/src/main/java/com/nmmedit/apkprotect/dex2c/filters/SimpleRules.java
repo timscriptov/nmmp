@@ -2,15 +2,14 @@ package com.nmmedit.apkprotect.dex2c.filters;
 
 import com.google.common.collect.HashMultimap;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * class * extends android.app.Activity
