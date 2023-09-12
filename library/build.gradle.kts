@@ -22,23 +22,12 @@ dependencies {
     implementation("com.android:zipflinger:8.1.1")
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-
-tasks {
-    compileKotlin {
-        kotlinOptions.jvmTarget = "17"
-    }
-}
-
 publishing {
     publications {
         register<MavenPublication>("release") {
             groupId = "com.mcal"
             artifactId = "nmmp"
-            version = "1.2.4"
+            version = "1.2.5"
 
             afterEvaluate {
                 from(components["java"])
