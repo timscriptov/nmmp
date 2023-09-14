@@ -38,6 +38,7 @@ fun App() {
     var x64 by remember { mutableStateOf(Prefs.isX64()) }
 
     var rulesPath by remember { mutableStateOf("") }
+    var mappingPath by remember { mutableStateOf("") }
     var sdkPath by remember { mutableStateOf(Prefs.getSdkPath()) }
     var ndkPath by remember { mutableStateOf(Prefs.getNdkPath()) }
     var cmakePath by remember { mutableStateOf(Prefs.getCmakePath()) }
@@ -92,9 +93,10 @@ fun App() {
                                             val output = File(apkPath.replace(".apk", "_vmp.apk"))
                                             try {
                                                 VmpTask(
-                                                    input = File(apkPath),
-                                                    output = output,
-                                                    rules = File(rulesPath),
+                                                    input = apkPath,
+                                                    output = output.path,
+                                                    rules = rulesPath,
+                                                    mapping = mappingPath,
                                                     logs = logs
                                                 ).start()
                                                 logs.add("I: Apk saved:\n${output.path}")
@@ -188,6 +190,14 @@ fun App() {
                                 label = { Text("Enter rules path") },
                                 onValueChange = {
                                     rulesPath = it.replace("\"", "")
+                                }
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = mappingPath,
+                                label = { Text("Enter ProGuard mapping path") },
+                                onValueChange = {
+                                    mappingPath = it.replace("\"", "")
                                 }
                             )
                             OutlinedTextField(
