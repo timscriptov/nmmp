@@ -58,3 +58,37 @@ ApkProtect.Builder(ApkFolders(input, output)).apply {
     setClassAnalyzer(ClassAnalyzer())
 }.build().run()
 ```
+
+## Protect AAR:
+```kotlin
+val input = File("input.aar")
+val output = File("output.aar")
+val rules = File("rules.txt")
+val simpleRules = SimpleRules().apply {
+    parse(InputStreamReader(FileInputStream(rules), StandardCharsets.UTF_8))
+}
+val filterConfig = SimpleConvertConfig(BasicKeepConfig(), simpleRules)
+AarProtect.Builder(AarFolders(input, output)).apply {
+    setInstructionRewriter(RandomInstructionRewriter())
+    setFilter(filterConfig)
+    setLogger(null)
+    setClassAnalyzer(ClassAnalyzer())
+}.build().run()
+```
+
+## Protect AAB:
+```kotlin
+val input = File("input.aab")
+val output = File("output.aab")
+val rules = File("rules.txt")
+val simpleRules = SimpleRules().apply {
+    parse(InputStreamReader(FileInputStream(rules), StandardCharsets.UTF_8))
+}
+val filterConfig = SimpleConvertConfig(BasicKeepConfig(), simpleRules)
+AabProtect.Builder(AabFolders(input, output)).apply {
+    setInstructionRewriter(RandomInstructionRewriter())
+    setFilter(filterConfig)
+    setLogger(null)
+    setClassAnalyzer(ClassAnalyzer())
+}.build().run()
+```
