@@ -8,11 +8,11 @@ public class AabFolders {
     @NotNull
     private final File inAab;
     @NotNull
-    private final File outRootDir;
+    private final File outputAabFile;
 
-    public AabFolders(@NotNull File inAab, @NotNull File outRootDir) {
+    public AabFolders(@NotNull File inAab, @NotNull File outputAabFile) {
         this.inAab = inAab;
-        this.outRootDir = outRootDir;
+        this.outputAabFile = outputAabFile;
     }
 
     @NotNull
@@ -22,19 +22,19 @@ public class AabFolders {
 
     @NotNull
     public File getOutRootDir() {
-        return outRootDir;
+        return outputAabFile.getParentFile();
     }
 
     //apk解压目录,生成新apk之后可以删除
     @NotNull
     public File getZipExtractTempDir() {
-        return new File(outRootDir, ".apk_temp");
+        return new File(getOutRootDir(), ".apk_temp");
     }
 
     //c源代码输出目录
     @NotNull
     public File getDex2cSrcDir() {
-        return new File(outRootDir, "dex2c");
+        return new File(getOutRootDir(), "dex2c");
     }
 
     //c文件及对应dex输出目录
@@ -47,17 +47,12 @@ public class AabFolders {
     //这个目录可以删除,但是为了更好debug之类就保留了方便查看dex
     @NotNull
     public File getTempDexDir() {
-        return new File(outRootDir, "dex_output");
+        return new File(getOutRootDir(), "dex_output");
     }
 
 
     @NotNull
     public File getOutputAab() {
-        String name = inAab.getName();
-        final int i = name.lastIndexOf('.');
-        if (i != -1) {
-            name = name.substring(0, i);
-        }
-        return new File(outRootDir, name + "-protect.aab");
+        return outputAabFile;
     }
 }

@@ -1,7 +1,7 @@
 package com.nmmedit.apkprotect;
 
 import com.nmmedit.apkprotect.data.Prefs;
-import com.nmmedit.apkprotect.log.ApkLogger;
+import com.nmmedit.apkprotect.log.VmpLogger;
 import com.nmmedit.apkprotect.util.FileHelper;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.nmmedit.apkprotect.ApkProtect.apkLogger;
+import static com.nmmedit.apkprotect.ApkProtect.vmpLogger;
 
 public class BuildNativeLib {
     public static @NotNull Map<String, Map<File, File>> generateNativeLibs(@NotNull File outDir,
@@ -75,7 +75,7 @@ public class BuildNativeLib {
     }
 
     private static void execCmd(List<String> cmds) throws IOException {
-        final ApkLogger logger = apkLogger;
+        final VmpLogger logger = vmpLogger;
         if (logger != null) {
             logger.info(String.valueOf(cmds));
         } else {
@@ -106,7 +106,7 @@ public class BuildNativeLib {
     private static void printOutput(InputStream inputStream) throws IOException {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String line;
-        final ApkLogger logger = apkLogger;
+        final VmpLogger logger = vmpLogger;
         while ((line = reader.readLine()) != null) {
             if (logger != null) {
                 logger.info(line);
@@ -241,7 +241,7 @@ public class BuildNativeLib {
                 //windows
                 vmFile = new File(getBuildPath(), "vm/" + vm);
             }
-            final ApkLogger logger = apkLogger;
+            final VmpLogger logger = vmpLogger;
             if (!vmFile.exists()) {
                 if (logger != null) {
                     logger.warning("Not Found so: " + vmFile.getAbsolutePath());

@@ -19,7 +19,7 @@ import com.nmmedit.apkprotect.dex2c.converter.ClassAnalyzer;
 import com.nmmedit.apkprotect.dex2c.converter.instructionrewriter.InstructionRewriter;
 import com.nmmedit.apkprotect.dex2c.converter.structs.RegisterNativesUtilClassDef;
 import com.nmmedit.apkprotect.dex2c.filters.ClassAndMethodFilter;
-import com.nmmedit.apkprotect.log.ApkLogger;
+import com.nmmedit.apkprotect.log.VmpLogger;
 import com.nmmedit.apkprotect.util.ApkUtils;
 import com.nmmedit.apkprotect.util.CmakeUtils;
 import com.nmmedit.apkprotect.util.FileHelper;
@@ -41,7 +41,7 @@ public class ApkProtect {
     public static final String ANDROID_MANIFEST_XML = "AndroidManifest.xml";
     public static final String ANDROID_APP_APPLICATION = "android.app.Application";
     @Nullable
-    public static ApkLogger apkLogger;
+    public static VmpLogger vmpLogger;
     private final ApkFolders apkFolders;
     private final InstructionRewriter instructionRewriter;
     private final ClassAndMethodFilter filter;
@@ -213,7 +213,7 @@ public class ApkProtect {
             DexConfig config = configs.get(i);
             final List<DexPool> retPools = Dex2c.injectCallRegisterNativeInsns(config, lastDexPool, mainClassSet, maxPoolSize);
             if (retPools.isEmpty()) {
-                final ApkLogger logger = apkLogger;
+                final VmpLogger logger = vmpLogger;
                 if (logger != null) {
                     logger.error("Dex inject instruction error");
                 } else {
@@ -304,7 +304,7 @@ public class ApkProtect {
         final File zipExtractDir = apkFolders.getZipExtractTempDir();
 
         try {
-            final ApkLogger logger = apkLogger;
+            final VmpLogger logger = vmpLogger;
             byte[] manifestBytes = ZipHelper.getZipFileContent(apkFile, ANDROID_MANIFEST_XML);
             if (manifestBytes == null) {
                 if (logger != null) {
@@ -463,7 +463,7 @@ public class ApkProtect {
         }
 
         public ApkProtect build() {
-            final ApkLogger logger = apkLogger;
+            final VmpLogger logger = vmpLogger;
             if (instructionRewriter == null) {
                 if (logger != null) {
                     logger.warning("instructionRewriter == null");
@@ -481,8 +481,8 @@ public class ApkProtect {
             return new ApkProtect(apkFolders, instructionRewriter, filter, classAnalyzer);
         }
 
-        public void setLogger(@NotNull ApkLogger logger) {
-            apkLogger = logger;
+        public void setLogger(@NotNull VmpLogger logger) {
+            vmpLogger = logger;
         }
     }
 }

@@ -12,6 +12,7 @@ import com.nmmedit.apkprotect.dex2c.GlobalDexConfig;
 import com.nmmedit.apkprotect.dex2c.converter.ClassAnalyzer;
 import com.nmmedit.apkprotect.dex2c.converter.instructionrewriter.InstructionRewriter;
 import com.nmmedit.apkprotect.dex2c.filters.ClassAndMethodFilter;
+import com.nmmedit.apkprotect.log.VmpLogger;
 import com.nmmedit.apkprotect.util.ApkUtils;
 import com.nmmedit.apkprotect.util.CmakeUtils;
 import com.nmmedit.apkprotect.util.FileHelper;
@@ -33,6 +34,7 @@ public class AabProtect {
     public static final String BUNDLE_MAPPING = "BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map";
     public static final String BUNDLE_CONFIG = "BundleConfig.pb";
     public static final String NATIVE_PB = "base/native.pb";
+    public static VmpLogger vmpLogger;
     @NotNull
     private final AabFolders aabFolders;
     @NotNull
@@ -76,7 +78,6 @@ public class AabProtect {
     //根据aab文件得到abi，如果没有本地库则返回x86及arm所有abi
     private static @NotNull List<String> getAbis(File aab) throws IOException {
         final Pattern pattern = Pattern.compile("base/lib/(.*)/.*\\.so");
-        ;
         Set<String> abis = new HashSet<>();
         try (ZipFile zipFile = new ZipFile(aab)) {
             final Enumeration<? extends ZipEntry> entries = zipFile.getEntries();
@@ -123,17 +124,17 @@ public class AabProtect {
         final File inAab = aabFolders.getInAab();
         final File zipExtractDir = aabFolders.getZipExtractTempDir();
 
-
         try {
+            final VmpLogger log = vmpLogger;
             byte[] manifestBytes = ApkUtils.getFile(inAab, ANDROID_MANIFEST_XML);
             if (manifestBytes == null) {
                 //错误aab文件
-                throw new RuntimeException("Not is aab");
+                if (log != null) {
+                    log.warning("Not is aab");
+                } else {
+                    throw new RuntimeException("Not is aab");
+                }
             }
-
-
-            final String packageName = ProtoUtils.AndroidManifest.getPackageName(manifestBytes);
-
 
             //生成一些需要改变的c代码(随机opcode后的头文件及apk验证代码等)
             CmakeUtils.generateCSources(aabFolders.getDex2cSrcDir(), instructionRewriter);
@@ -141,7 +142,11 @@ public class AabProtect {
             //解压得到所有classesN.dex
             List<File> files = getClassesFiles(inAab, zipExtractDir);
             if (files.isEmpty()) {
-                throw new RuntimeException("No classes.dex");
+                if (log != null) {
+                    log.warning("No classes.dex");
+                } else {
+                    throw new RuntimeException("No classes.dex");
+                }
             }
             for (File file : files) {
                 classAnalyzer.loadDexFile(file);
@@ -155,7 +160,6 @@ public class AabProtect {
                     instructionRewriter,
                     classAnalyzer,
                     aabFolders.getCodeGeneratedDir());
-
 
             //需要放在主dex里的类
             final Set<String> mainDexClassTypeSet = new HashSet<>();
@@ -197,7 +201,7 @@ public class AabProtect {
             try (ZipFile zipFile = new ZipFile(inAab)) {
                 try (ZipOutputStream zos = new ZipOutputStream(outputAab)) {
                     //add new BundleConfig.pb
-                    final byte[] configBytes = ApkUtils.getFile(inAab, BUNDLE_CONFIG);
+                    final byte[] configBytes = ZipHelper.getZipFileContent(inAab, BUNDLE_CONFIG);
                     final byte[] newConfigBytes = ProtoUtils.BundleConfig.editConfig(configBytes);
 
                     zos.putNextEntry(BUNDLE_CONFIG);
@@ -292,12 +296,25 @@ public class AabProtect {
             return this;
         }
 
+        public void setLogger(VmpLogger logger) {
+            vmpLogger = logger;
+        }
+
         public AabProtect build() {
+            final VmpLogger logger = vmpLogger;
             if (instructionRewriter == null) {
-                throw new RuntimeException("instructionRewriter == null");
+                if (logger != null) {
+                    logger.warning("instructionRewriter == null");
+                } else {
+                    throw new RuntimeException("instructionRewriter == null");
+                }
             }
             if (classAnalyzer == null) {
-                throw new RuntimeException("classAnalyzer == null");
+                if (logger != null) {
+                    logger.warning("classAnalyzer == null");
+                } else {
+                    throw new RuntimeException("classAnalyzer == null");
+                }
             }
             return new AabProtect(aabFolders, instructionRewriter, classAnalyzer, filter);
         }

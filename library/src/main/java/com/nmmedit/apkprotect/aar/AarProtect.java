@@ -18,6 +18,7 @@ import com.nmmedit.apkprotect.dex2c.converter.ClassAnalyzer;
 import com.nmmedit.apkprotect.dex2c.converter.MyMethodUtil;
 import com.nmmedit.apkprotect.dex2c.converter.instructionrewriter.InstructionRewriter;
 import com.nmmedit.apkprotect.dex2c.filters.ClassAndMethodFilter;
+import com.nmmedit.apkprotect.log.VmpLogger;
 import com.nmmedit.apkprotect.util.CmakeUtils;
 import com.nmmedit.apkprotect.util.FileHelper;
 import com.nmmedit.apkprotect.util.ZipHelper;
@@ -31,11 +32,10 @@ import java.io.*;
 import java.util.*;
 
 public class AarProtect {
+    public static VmpLogger vmpLogger;
     private final AarFolders aarFolders;
     private final InstructionRewriter instructionRewriter;
-
     private final ClassAndMethodFilter filter;
-
     private final ClassAnalyzer classAnalyzer;
 
     private AarProtect(AarFolders aarFolders,
@@ -99,14 +99,19 @@ public class AarProtect {
 
         byte[] jarBytes = ZipHelper.getZipFileContent(dexJar, "classes.dex");
         if (jarBytes == null) {
-            throw new IllegalStateException("No classes.dex");
+            final VmpLogger logger = vmpLogger;
+            if (logger == null) {
+                throw new IllegalStateException("No classes.dex");
+            } else {
+                logger.warning("No classes.dex");
+            }
         }
         FileHelper.copyStream(FileHelper.bytesToInputStream(jarBytes), new FileOutputStream(file));
         return file;
     }
 
     public void run() throws IOException {
-        final File aar = aarFolders.getAar();
+        final File aar = aarFolders.getInputAar();
         if (!aar.exists()) {
             throw new FileNotFoundException(aar.getAbsolutePath());
         }
@@ -235,9 +240,14 @@ public class AarProtect {
             return file;
         }
 
-        byte[] jarBytes = ZipHelper.getZipFileContent(aarFolders.getAar(), "classes.jar");
+        final byte[] jarBytes = ZipHelper.getZipFileContent(aarFolders.getInputAar(), "classes.jar");
         if (jarBytes == null) {
-            throw new IllegalStateException("No classes.jar");
+            final VmpLogger logger = vmpLogger;
+            if (logger == null) {
+                throw new IllegalStateException("No classes.jar");
+            } else {
+                logger.warning("No classes.jar");
+            }
         }
         FileHelper.copyStream(FileHelper.bytesToInputStream(jarBytes), new FileOutputStream(file));
         return file;
@@ -291,12 +301,25 @@ public class AarProtect {
             return this;
         }
 
+        public void setLogger(VmpLogger logger) {
+            AarProtect.vmpLogger = logger;
+        }
+
         public AarProtect build() {
+            final VmpLogger logger = vmpLogger;
             if (instructionRewriter == null) {
-                throw new RuntimeException("instructionRewriter == null");
+                if (logger == null) {
+                    throw new RuntimeException("instructionRewriter == null");
+                } else {
+                    logger.warning("instructionRewriter == null");
+                }
             }
             if (classAnalyzer == null) {
-                throw new RuntimeException("classAnalyzer==null");
+                if (logger == null) {
+                    throw new RuntimeException("classAnalyzer==null");
+                } else {
+                    logger.warning("classAnalyzer == null");
+                }
             }
             return new AarProtect(aarFolders, instructionRewriter, filter, classAnalyzer);
         }

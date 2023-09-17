@@ -6,36 +6,35 @@ import java.io.File;
 
 public class AarFolders {
     public final ApkFolders apkFolders;
-    private final File aar;
-    private final File out;
+    private final File inputAarFile;
+    private final File outputAarFile;
 
-    public AarFolders(File aar, File out) {
-        this.aar = aar;
-        this.out = out;
-        this.apkFolders = new ApkFolders(getConvertedDexJar(), out);
+    public AarFolders(File aar, File outputAarFile) {
+        this.inputAarFile = aar;
+        this.outputAarFile = outputAarFile;
+        this.apkFolders = new ApkFolders(getConvertedDexJar(), outputAarFile);
     }
 
-    public File getAar() {
-        return aar;
+    public File getInputAar() {
+        return inputAarFile;
+    }
+
+    public File getOutputDir() {
+        return outputAarFile.getParentFile();
     }
 
 
     public File getConvertedDexJar() {
-        return new File(getTempDir(), aar.getName() + "-dex.jar");
+        return new File(getTempDir(), getOutputDir().getName() + "-dex.jar");
     }
 
     public File getTempDir() {
-        final File file = new File(out, ".dx_temp");
+        final File file = new File(getOutputDir(), ".dx_temp");
         if (!file.exists()) file.mkdirs();
         return file;
     }
 
     public File getOutputAar() {
-        String name = aar.getName();
-        final int i = name.lastIndexOf('.');
-        if (i != -1) {
-            name = name.substring(0, i);
-        }
-        return new File(out, name + "-protect.aar");
+        return outputAarFile;
     }
 }

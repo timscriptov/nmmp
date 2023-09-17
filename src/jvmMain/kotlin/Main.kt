@@ -19,6 +19,9 @@ import com.nmmedit.apkprotect.data.Storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import task.AabVmpTask
+import task.AarVmpTask
+import task.ApkVmpTask
 import java.awt.Dimension
 import java.io.File
 import java.io.IOException
@@ -29,7 +32,7 @@ import java.io.IOException
 fun App() {
     var isEnabled by remember { mutableStateOf(true) }
 
-    var apkPath by remember { mutableStateOf("") }
+    var inputFilePath by remember { mutableStateOf("") }
 
     var arm by remember { mutableStateOf(Prefs.isArm()) }
     var arm64 by remember { mutableStateOf(Prefs.isArm64()) }
@@ -67,10 +70,10 @@ fun App() {
                         ) {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
-                                value = apkPath,
-                                label = { Text("Enter APK path*") },
+                                value = inputFilePath,
+                                label = { Text("Enter APK/AAR/AAB path*") },
                                 onValueChange = {
-                                    apkPath = it.replace("\"", "")
+                                    inputFilePath = it.replace("\"", "")
                                 }
                             )
                             Button(
@@ -79,26 +82,51 @@ fun App() {
                                 onClick = {
                                     CoroutineScope(Dispatchers.IO).launch {
                                         isEnabled = false
-                                        if (apkPath.isEmpty()) {
-                                            logs.add("W: Enter apk path")
-                                        } else if (!File(apkPath).exists()) {
-                                            logs.add("W: APK file not found")
+                                        if (inputFilePath.isEmpty()) {
+                                            logs.add("W: Enter APK/AAB/AAR path")
+                                        } else if (!File(inputFilePath).exists()) {
+                                            logs.add("W: APK/AAB/AAR file not found")
                                         } else if (rulesPath.isEmpty()) {
                                             logs.add("W: Enter rules path")
                                         } else if (!File(rulesPath).exists()) {
                                             logs.add("W: Rules file not found")
                                         } else {
                                             logs.add("I: Starting...")
-                                            val output = File(apkPath.replace(".apk", "_vmp.apk"))
+                                            val output: File
                                             try {
-                                                VmpTask(
-                                                    input = apkPath,
-                                                    output = output.path,
-                                                    rules = rulesPath,
-                                                    mapping = mappingPath,
-                                                    logs = logs
-                                                ).start()
-                                                logs.add("I: Apk saved:\n${output.path}")
+                                                if (inputFilePath.endsWith(".apk")) {
+                                                    output = File(inputFilePath.replace(".apk", "_vmp.apk"))
+                                                    ApkVmpTask(
+                                                        input = inputFilePath,
+                                                        output = output.path,
+                                                        rules = rulesPath,
+                                                        mapping = mappingPath,
+                                                        logs = logs
+                                                    ).start()
+                                                    logs.add("I: APK saved:\n${output.path}")
+                                                } else if (inputFilePath.endsWith(".aab")) {
+                                                    output = File(inputFilePath.replace(".aab", "_vmp.aab"))
+                                                    AabVmpTask(
+                                                        input = inputFilePath,
+                                                        output = output.path,
+                                                        rules = rulesPath,
+                                                        mapping = mappingPath,
+                                                        logs = logs
+                                                    ).start()
+                                                    logs.add("I: AAB saved:\n${output.path}")
+                                                } else if (inputFilePath.endsWith(".aar")) {
+                                                    output = File(inputFilePath.replace(".aar", "_vmp.aar"))
+                                                    AarVmpTask(
+                                                        input = inputFilePath,
+                                                        output = output.path,
+                                                        rules = rulesPath,
+                                                        mapping = mappingPath,
+                                                        logs = logs
+                                                    ).start()
+                                                    logs.add("I: AAR saved:\n${output.path}")
+                                                } else {
+                                                    logs.add(" Unknown file. Please select APK/AAB/AAR")
+                                                }
                                             } catch (io: IOException) {
                                                 logs.add("E: " + io.message)
                                             }
@@ -111,70 +139,72 @@ fun App() {
                             }
                         }
                     }
-                    Card(modifier = Modifier.padding(top = 8.dp)) {
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                        ) {
-                            Row {
-                                Text(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxWidth(),
-                                    text = "armeabi-v7a"
-                                )
-                                Switch(
-                                    checked = arm,
-                                    onCheckedChange = {
-                                        arm = it
-                                        Prefs.setArm(it)
-                                    }
-                                )
-                            }
-                            Row {
-                                Text(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxWidth(),
-                                    text = "arm64-v8a"
-                                )
-                                Switch(
-                                    checked = arm64,
-                                    onCheckedChange = {
-                                        arm64 = it
-                                        Prefs.setArm64(it)
-                                    }
-                                )
-                            }
-                            Row {
-                                Text(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxWidth(),
-                                    text = "x86"
-                                )
-                                Switch(
-                                    checked = x86,
-                                    onCheckedChange = {
-                                        x86 = it
-                                        Prefs.setX86(it)
-                                    }
-                                )
-                            }
-                            Row {
-                                Text(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxWidth(),
-                                    text = "x86_64"
-                                )
-                                Switch(
-                                    checked = x64,
-                                    onCheckedChange = {
-                                        x64 = it
-                                        Prefs.setX64(it)
-                                    }
-                                )
+                    if (!inputFilePath.endsWith(".aar")) {
+                        Card(modifier = Modifier.padding(top = 8.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                            ) {
+                                Row {
+                                    Text(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth(),
+                                        text = "armeabi-v7a"
+                                    )
+                                    Switch(
+                                        checked = arm,
+                                        onCheckedChange = {
+                                            arm = it
+                                            Prefs.setArm(it)
+                                        }
+                                    )
+                                }
+                                Row {
+                                    Text(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth(),
+                                        text = "arm64-v8a"
+                                    )
+                                    Switch(
+                                        checked = arm64,
+                                        onCheckedChange = {
+                                            arm64 = it
+                                            Prefs.setArm64(it)
+                                        }
+                                    )
+                                }
+                                Row {
+                                    Text(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth(),
+                                        text = "x86"
+                                    )
+                                    Switch(
+                                        checked = x86,
+                                        onCheckedChange = {
+                                            x86 = it
+                                            Prefs.setX86(it)
+                                        }
+                                    )
+                                }
+                                Row {
+                                    Text(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth(),
+                                        text = "x86_64"
+                                    )
+                                    Switch(
+                                        checked = x64,
+                                        onCheckedChange = {
+                                            x64 = it
+                                            Prefs.setX64(it)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
