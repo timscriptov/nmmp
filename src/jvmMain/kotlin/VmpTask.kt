@@ -31,7 +31,6 @@ class VmpTask(
         }
         ApkProtect.Builder(ApkFolders(File(input), File(output))).apply {
             setInstructionRewriter(RandomInstructionRewriter())
-            setApkVerifyCodeGenerator(null)
             setFilter(filterConfig)
             setLogger(this@VmpTask)
             setClassAnalyzer(ClassAnalyzer())

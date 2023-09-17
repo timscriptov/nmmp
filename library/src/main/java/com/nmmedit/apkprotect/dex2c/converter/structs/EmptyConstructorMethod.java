@@ -11,8 +11,8 @@ import com.android.tools.smali.dexlib2.iface.Annotation;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.android.tools.smali.dexlib2.iface.MethodImplementation;
 import com.android.tools.smali.dexlib2.iface.MethodParameter;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -29,18 +29,18 @@ import java.util.Set;
 
 public class EmptyConstructorMethod extends BaseMethodReference implements Method {
 
-    @Nonnull
+    @NotNull
     private final String definingClass;
 
-    @Nonnull
+    @NotNull
     private final String superClass;
 
-    public EmptyConstructorMethod(@Nonnull String definingClass, @Nonnull String superClass) {
+    public EmptyConstructorMethod(@NotNull String definingClass, @NotNull String superClass) {
         this.definingClass = definingClass;
         this.superClass = superClass;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public List<? extends MethodParameter> getParameters() {
         return Collections.emptyList();
@@ -52,13 +52,13 @@ public class EmptyConstructorMethod extends BaseMethodReference implements Metho
                 | AccessFlags.PUBLIC.getValue();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Set<? extends Annotation> getAnnotations() {
         return Collections.emptySet();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Set<HiddenApiRestriction> getHiddenApiRestrictions() {
         return Collections.emptySet();
@@ -69,25 +69,25 @@ public class EmptyConstructorMethod extends BaseMethodReference implements Metho
         final MutableMethodImplementation implementation = new MutableMethodImplementation(1);
         implementation.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1,
                 0, 0, 0, 0, 0, new BaseMethodReference() {
-            @Nonnull
+            @NotNull
             @Override
             public String getDefiningClass() {
                 return superClass;
             }
 
-            @Nonnull
+            @NotNull
             @Override
             public String getName() {
                 return "<init>";
             }
 
-            @Nonnull
+            @NotNull
             @Override
             public List<? extends CharSequence> getParameterTypes() {
                 return Collections.emptyList();
             }
 
-            @Nonnull
+            @NotNull
             @Override
             public String getReturnType() {
                 return "V";
@@ -98,25 +98,25 @@ public class EmptyConstructorMethod extends BaseMethodReference implements Metho
         return implementation;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public String getDefiningClass() {
         return definingClass;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public String getName() {
         return "<init>";
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public List<? extends CharSequence> getParameterTypes() {
         return Collections.emptyList();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public String getReturnType() {
         return "V";

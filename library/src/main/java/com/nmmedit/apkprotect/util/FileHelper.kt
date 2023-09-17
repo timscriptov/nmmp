@@ -9,6 +9,16 @@ import java.nio.charset.StandardCharsets
 
 object FileHelper {
     @JvmStatic
+    fun bytesToInputStream(byteArray: ByteArray): InputStream {
+        return byteArray.inputStream()
+    }
+
+    @JvmStatic
+    fun readBytes(file: File): ByteArray {
+        return file.readBytes()
+    }
+
+    @JvmStatic
     fun readFile(file: File, encoding: Charset): String {
         return file.inputStream().readBytes().toString(encoding)
     }

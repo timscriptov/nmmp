@@ -14,9 +14,9 @@ import com.android.tools.smali.dexlib2.iface.MethodImplementation;
 import com.android.tools.smali.dexlib2.iface.MethodParameter;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableStringReference;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -26,44 +26,44 @@ public class LoadLibStaticBlockMethod extends BaseMethodReference implements Met
 
     private final Method method;
 
-    @Nonnull
+    @NotNull
     private final String definingClass;
 
-    @Nonnull
+    @NotNull
     private final String libName;
 
 
-    public LoadLibStaticBlockMethod(@Nullable Method method, @Nonnull String definingClass, @Nonnull String libName) {
+    public LoadLibStaticBlockMethod(@Nullable Method method, @NotNull String definingClass, @NotNull String libName) {
         this.method = method;
         this.definingClass = definingClass;
         this.libName = libName;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public String getDefiningClass() {
         return definingClass;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public String getName() {
         return "<clinit>";
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public List<? extends CharSequence> getParameterTypes() {
         return Collections.emptyList();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public List<? extends MethodParameter> getParameters() {
         return Collections.emptyList();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public String getReturnType() {
         return "V";
@@ -76,13 +76,13 @@ public class LoadLibStaticBlockMethod extends BaseMethodReference implements Met
                 | AccessFlags.STATIC.getValue();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Set<? extends Annotation> getAnnotations() {
         return Collections.emptySet();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Set<HiddenApiRestriction> getHiddenApiRestrictions() {
         return Collections.emptySet();
@@ -107,7 +107,7 @@ public class LoadLibStaticBlockMethod extends BaseMethodReference implements Met
         return implementation;
     }
 
-    private void injectCallLoadLibInsns(MutableMethodImplementation implementation) {
+    private void injectCallLoadLibInsns(@NotNull MutableMethodImplementation implementation) {
         implementation.addInstruction(0, new BuilderInstruction21c(Opcode.CONST_STRING, 0,
                 new ImmutableStringReference(libName)));
         implementation.addInstruction(1, new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1,

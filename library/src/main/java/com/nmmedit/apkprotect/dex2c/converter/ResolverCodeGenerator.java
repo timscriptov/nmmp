@@ -5,8 +5,8 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.nmmedit.apkprotect.util.ModifiedUtf8;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
 import java.io.Writer;
@@ -18,31 +18,20 @@ import java.util.List;
  */
 
 public class ResolverCodeGenerator {
-
-
     private final References references;
 
     public ResolverCodeGenerator(DexBackedDexFile dexFile,
-                                 @Nonnull ClassAnalyzer analyzer
+                                 @NotNull ClassAnalyzer analyzer
     ) {
 
         references = new References(dexFile, analyzer);
-    }
-
-    static String stringEsc(String str) throws UTFDataFormatException {
-        byte[] bytes = ModifiedUtf8.encode(str);
-        StringBuilder sb = new StringBuilder(4 * bytes.length);
-        for (byte b : bytes) {
-            sb.append(String.format("\\x%02x", b & 0xFF));
-        }
-        return sb.toString();
     }
 
     public References getReferences() {
         return references;
     }
 
-    public void generate(Writer writer) throws IOException {
+    public void generate(@NotNull Writer writer) throws IOException {
         writer.write("#include \"GlobalCache.h\"\n");
         writer.write("#include \"ConstantPool.h\"\n\n");
         writer.write("#include <pthread.h>\n\n\n");
@@ -92,7 +81,7 @@ public class ResolverCodeGenerator {
         writer.write(String.format("static jstring gStringConstants[%d];\n\n", constStringIds.length));
     }
 
-    private void generateResolver(Writer writer) throws IOException {
+    private void generateResolver(@NotNull Writer writer) throws IOException {
         writer.write("static void resolver_init(JNIEnv *env) {\n" +
                 "    if(sizeof(gFields) == 0) return;\n" +
                 "    if(sizeof(gMethods) == 0) return;\n" +
@@ -279,7 +268,7 @@ public class ResolverCodeGenerator {
                         "\n");
     }
 
-    private void generateMethodPool(Writer writer) throws IOException {
+    private void generateMethodPool(@NotNull Writer writer) throws IOException {
         final References references = this.references;
         writer.write(
                 "\n" +
@@ -329,7 +318,7 @@ public class ResolverCodeGenerator {
         writer.write("\n");
     }
 
-    private void generateFieldPool(Writer writer) throws IOException {
+    private void generateFieldPool(@NotNull Writer writer) throws IOException {
         final References references = this.references;
         writer.write(
                 "\n" +
@@ -371,7 +360,8 @@ public class ResolverCodeGenerator {
         writer.write(String.format("static vmField gFields[%d];\n", fieldPool.size()));
     }
 
-    private void generateStringPool(Writer writer) throws IOException {
+
+    private void generateStringPool(@NotNull Writer writer) throws IOException {
         writer.write("static const u1 gBaseStrPtr[]={\n");
 
         ArrayList<Long> strOffsets = new ArrayList<>();
@@ -413,7 +403,16 @@ public class ResolverCodeGenerator {
         writer.flush();
     }
 
-    private void generateTypePool(Writer writer) throws IOException {
+    static @NotNull String stringEsc(String str) throws UTFDataFormatException {
+        byte[] bytes = ModifiedUtf8.encode(str);
+        StringBuilder sb = new StringBuilder(4 * bytes.length);
+        for (byte b : bytes) {
+            sb.append(String.format("\\x%02x", b & 0xFF));
+        }
+        return sb.toString();
+    }
+
+    private void generateTypePool(@NotNull Writer writer) throws IOException {
 
         writer.write(
                 "\n" +
@@ -432,7 +431,7 @@ public class ResolverCodeGenerator {
     }
 
     //根据类型池,去掉L开头和;得到class name,其他则不变
-    private void generateClassNamePool(Writer writer) throws IOException {
+    private void generateClassNamePool(@NotNull Writer writer) throws IOException {
         writer.write(
                 "\n" +
                         "typedef struct {\n" +
@@ -455,7 +454,7 @@ public class ResolverCodeGenerator {
         writer.write("//ends class name ids\n\n");
     }
 
-    private void generateSignaturePool(Writer writer) throws IOException {
+    private void generateSignaturePool(@NotNull Writer writer) throws IOException {
         writer.write(
                 "typedef struct {\n" +
                         "    u4 idx;\n" +

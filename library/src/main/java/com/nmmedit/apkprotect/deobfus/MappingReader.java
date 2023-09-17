@@ -1,22 +1,39 @@
 package com.nmmedit.apkprotect.deobfus;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 public class MappingReader {
     private final File mappingFile;
+    private final InputStream mappingInput;
 
     public MappingReader(File mappingFile) {
         this.mappingFile = mappingFile;
+        this.mappingInput = null;
+    }
+
+    public MappingReader(InputStream mappingInput) {
+        this.mappingInput = mappingInput;
+        this.mappingFile = null;
+    }
+
+    @Contract(" -> new")
+    private @NotNull Reader getMappingReader() throws IOException {
+        if (mappingFile != null) {
+            return new FileReader(mappingFile);
+        }
+        if (mappingInput != null) {
+            return new InputStreamReader(mappingInput, StandardCharsets.UTF_8);
+        }
+        throw new IOException("No mapping");
     }
 
     public void parse(MappingProcessor processor) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(mappingFile))
+        try (BufferedReader reader = new BufferedReader(getMappingReader())
         ) {
             String className = null;
             String line;
@@ -31,6 +48,7 @@ public class MappingReader {
                     processClassMemberMapping(className, line, processor);
                 }
             }
+
         }
     }
 
@@ -40,7 +58,7 @@ public class MappingReader {
      * or null if any subsequent class member lines can be ignored.
      */
     private @Nullable String processClassMapping(@NotNull String line,
-                                                 @NotNull MappingProcessor mappingProcessor) {
+                                                 MappingProcessor mappingProcessor) {
         // See if we can parse "___ -> ___:", containing the original
         // class name and the new class name.
 
@@ -68,9 +86,9 @@ public class MappingReader {
      * Parses the given line with a class member mapping and processes the
      * results with the given mapping processor.
      */
-    private void processClassMemberMapping(@NotNull String className,
+    private void processClassMemberMapping(String className,
                                            @NotNull String line,
-                                           @NotNull MappingProcessor mappingProcessor) {
+                                           MappingProcessor mappingProcessor) {
         // See if we can parse one of
         //     ___ ___ -> ___
         //     ___:___:___ ___(___) -> ___

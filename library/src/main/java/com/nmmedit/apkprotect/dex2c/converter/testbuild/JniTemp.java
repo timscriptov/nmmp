@@ -1,5 +1,8 @@
 package com.nmmedit.apkprotect.dex2c.converter.testbuild;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 /**
@@ -24,12 +27,11 @@ public class JniTemp {
             "    free(tryHandler);\n" +
             "\n";
 
-    public static String genJniCode(String classType, String methodName, List<? extends CharSequence> parameterTypes, boolean isStatic, int registerCount, int parameterRegisterCount, String returnType) {
+    public static @NotNull String genJniCode(@NotNull String classType, String methodName, List<? extends CharSequence> parameterTypes, boolean isStatic, int registerCount, int parameterRegisterCount, String returnType) {
         StringBuilder params = new StringBuilder();
 
         //寄存器初始化
         StringBuilder regsAss = new StringBuilder(String.format("    u8 regs[%d];\n    memset(regs, 0, sizeof(regs));\n", registerCount));
-
 
         String clazzName = classType.substring(1, classType.length() - 1);
         String jniCode = String.format("JNIEXPORT %s Java_%s_%s(JNIEnv *env, %s ",
@@ -69,7 +71,7 @@ public class JniTemp {
             }
 
         }
-        if (params.length() > 0) {
+        if (!params.isEmpty()) {
             jniCode += ", " + params.toString();
         }
         jniCode += ") {\n";
@@ -86,30 +88,20 @@ public class JniTemp {
         return jniCode;
     }
 
-    public static String getJNIType(String type) {
-        switch (type) {
-            case "Z":
-                return "jboolean";
-            case "B":
-                return "jbyte";
-            case "S":
-                return "jshort";
-            case "C":
-                return "jchar";
-            case "I":
-                return "jint";
-            case "F":
-                return "jfloat";
-            case "J":
-                return "jlong";
-            case "D":
-                return "jdouble";
-            case "Ljava/lang/String;":
-                return "jstring";
-            case "V":
-                return "void";
-            default:
-                return "jobject";
-        }
+    @Contract(pure = true)
+    public static String getJNIType(@NotNull String type) {
+        return switch (type) {
+            case "Z" -> "jboolean";
+            case "B" -> "jbyte";
+            case "S" -> "jshort";
+            case "C" -> "jchar";
+            case "I" -> "jint";
+            case "F" -> "jfloat";
+            case "J" -> "jlong";
+            case "D" -> "jdouble";
+            case "Ljava/lang/String;" -> "jstring";
+            case "V" -> "void";
+            default -> "jobject";
+        };
     }
 }

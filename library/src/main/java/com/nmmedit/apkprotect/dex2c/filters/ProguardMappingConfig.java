@@ -9,8 +9,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.nmmedit.apkprotect.deobfus.MappingProcessor;
 import com.nmmedit.apkprotect.deobfus.MappingReader;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ public class ProguardMappingConfig implements ClassAndMethodFilter, MappingProce
     private final SimpleRules simpleRules;
 
     public ProguardMappingConfig(ClassAndMethodFilter filter,
-                                 MappingReader mappingReader,
+                                 @NotNull MappingReader mappingReader,
                                  SimpleRules simpleRules) throws IOException {
         this.filter = filter;
         this.simpleRules = simpleRules;
@@ -56,49 +57,7 @@ public class ProguardMappingConfig implements ClassAndMethodFilter, MappingProce
         }
     }
 
-    private static String classNameToType(String className) {
-        return "L" + className.replace('.', '/') + ";";
-    }
-
-    @Nonnull
-    private static String javaType2jvm(@Nonnull String type) {
-        switch (type.trim()) {
-            case "boolean":
-                return "Z";
-            case "byte":
-                return "B";
-            case "char":
-                return "C";
-            case "short":
-                return "S";
-            case "int":
-                return "I";
-            case "float":
-                return "F";
-            case "long":
-                return "J";
-            case "double":
-                return "D";
-            case "void":
-                return "V";
-            default:
-                int i = type.indexOf('[');
-                if (i != -1) {
-                    String t = type.substring(0, i);
-                    StringBuilder arr = new StringBuilder("[");
-                    while ((i = type.indexOf('[', i + 1)) != -1) {
-                        arr.append('[');
-                    }
-                    arr.append(javaType2jvm(t));
-                    return arr.toString();
-                } else {
-                    return classNameToType(type);
-                }
-
-        }
-    }
-
-    private List<String> getNewArgs(List<String> args) {
+    private @NotNull List<String> getNewArgs(@NotNull List<String> args) {
         final ArrayList<String> newArgs = new ArrayList<>();
         for (String arg : args) {
             final String newType = oldTypeNewTypeMap.get(arg);
@@ -106,6 +65,7 @@ public class ProguardMappingConfig implements ClassAndMethodFilter, MappingProce
         }
         return newArgs;
     }
+
 
     @Override
     public final boolean acceptClass(ClassDef classDef) {
@@ -129,6 +89,7 @@ public class ProguardMappingConfig implements ClassAndMethodFilter, MappingProce
                 ifacs);
     }
 
+
     private String getOriginClassType(String type) {
         final String oldType = newTypeOldTypeMap.get(type);
         if (oldType == null) {
@@ -148,7 +109,6 @@ public class ProguardMappingConfig implements ClassAndMethodFilter, MappingProce
         }
         final Set<MethodReference> oldMethodRefSet = newMethodRefMap.get(method);
 
-
         if (oldMethodRefSet != null) {
 
             for (MethodReference reference : oldMethodRefSet) {
@@ -158,10 +118,13 @@ public class ProguardMappingConfig implements ClassAndMethodFilter, MappingProce
                     }
                 }
             }
-
         }
-
         return simpleRules != null && simpleRules.matchMethod(method.getName());
+    }
+
+    @Contract(pure = true)
+    private static @NotNull String classNameToType(@NotNull String className) {
+        return "L" + className.replace('.', '/') + ";";
     }
 
     @Override
@@ -175,7 +138,54 @@ public class ProguardMappingConfig implements ClassAndMethodFilter, MappingProce
 
     }
 
-    @Nonnull
+    @NotNull
+    private static String javaType2jvm(@NotNull String type) {
+        switch (type.trim()) {
+            case "boolean" -> {
+                return "Z";
+            }
+            case "byte" -> {
+                return "B";
+            }
+            case "char" -> {
+                return "C";
+            }
+            case "short" -> {
+                return "S";
+            }
+            case "int" -> {
+                return "I";
+            }
+            case "float" -> {
+                return "F";
+            }
+            case "long" -> {
+                return "J";
+            }
+            case "double" -> {
+                return "D";
+            }
+            case "void" -> {
+                return "V";
+            }
+            default -> {
+                int i = type.indexOf('[');
+                if (i != -1) {
+                    String t = type.substring(0, i);
+                    StringBuilder arr = new StringBuilder("[");
+                    while ((i = type.indexOf('[', i + 1)) != -1) {
+                        arr.append('[');
+                    }
+                    arr.append(javaType2jvm(t));
+                    return arr.toString();
+                } else {
+                    return classNameToType(type);
+                }
+            }
+        }
+    }
+
+    @NotNull
     private List<String> parseArgs(String methodArgs) {
         final ArrayList<String> args = new ArrayList<>();
         if ("".equals(methodArgs)) {

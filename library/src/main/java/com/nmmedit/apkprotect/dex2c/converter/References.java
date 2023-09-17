@@ -12,8 +12,8 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference;
 import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.google.common.collect.Sets;
 import com.nmmedit.apkprotect.util.ModifiedUtf8;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.UTFDataFormatException;
 import java.util.*;
 
@@ -22,53 +22,35 @@ import java.util.*;
 
 public class References {
 
-    final ArrayList<String> stringPool = new ArrayList<>();
-    //用于重写const-string指令索引
-    final ArrayList<String> constStringPool = new ArrayList<>();
     private final ClassAnalyzer analyzer;
+    //计算type名最大长度，方便生成c代码时直接使用栈上内存
+    int maxTypeLen = 0;
+
     //基本字符串，其他引用全指向它
     private final HashSet<String> stringRefs = Sets.newHashSet();
+
     //所有类型引用
     private final HashSet<String> typeRefs = Sets.newHashSet();
+
     //域引用
     private final HashSet<MyFieldRef> fieldRefs = Sets.newHashSet();
     //方法引用
     private final HashSet<MyMethodRef> methodRefs = Sets.newHashSet();
+
+
     //方法参数加上返回类型，例如：(II)V
     private final HashSet<String> signatureRefs = Sets.newHashSet();
+
     //const-string两个指令需要的字符串
     private final HashSet<String> constantStrings = Sets.newHashSet();
+
     //扩展字符串池，原本dex没有，提前做些解析提升性能，为了不影响一些指令的引用索引防止超过65533,把它追加在字符串常量池后面
     private final HashSet<String> extStringRefs = Sets.newHashSet();
-    private final HashMap<String, Integer> stringPoolIndexMap = new HashMap<>();
-    private final HashMap<String, Integer> constStringPoolIndexMap = new HashMap<>();
-    private final ArrayList<String> typePool = new ArrayList<>();
-    private final HashMap<String, Integer> typePoolIndexMap = new HashMap<>();
-    //保持跟type pool一致(顺序和大小)，className只是去掉L;的类型字符串，如果基本类型则不处理比如I,B
-    private final ArrayList<String> classNamePool = new ArrayList<>();
-    private final HashMap<String, Integer> classNamePoolIndexMap = new HashMap<>();
-    //方法签名及索引
-    private final ArrayList<String> signaturePool = new ArrayList<>();
-    private final HashMap<String, Integer> signaturePoolIndexMap = new HashMap<>();
-    private final ArrayList<FieldReference> fieldPool = new ArrayList<>();
-    private final HashMap<FieldReference, Integer> fieldPoolIndexMap = new HashMap<>();
-    private final ArrayList<MethodReference> methodPool = new ArrayList<>();
-    private final HashMap<MethodReference, Integer> methodPoolIndexMap = new HashMap<>();
-    //计算type名最大长度，方便生成c代码时直接使用栈上内存
-    int maxTypeLen = 0;
 
-    References(@Nonnull DexBackedDexFile dexFile,
-               @Nonnull ClassAnalyzer analyzer) {
+    References(@NotNull DexBackedDexFile dexFile,
+               @NotNull ClassAnalyzer analyzer) {
         this.analyzer = analyzer;
         parseReferences(dexFile);
-    }
-
-    @Nonnull
-    private static String typeToClassName(@Nonnull String type) {
-        if (type.charAt(0) == 'L') {
-            return type.substring(1, type.length() - 1);
-        }
-        return type;
     }
 
     private void addStringRef(String type) {
@@ -101,7 +83,16 @@ public class References {
         stringRefs.add(type);
     }
 
-    private void addMethodSignature(MethodReference reference) {
+    @NotNull
+    private static String typeToClassName(@NotNull String type) {
+        if (type.charAt(0) == 'L') {
+            return type.substring(1, type.length() - 1);
+        }
+        return type;
+    }
+
+
+    private void addMethodSignature(@NotNull MethodReference reference) {
         final List<? extends CharSequence> parameterTypes = reference.getParameterTypes();
         StringBuilder sig = new StringBuilder();
         sig.append("(");
@@ -122,7 +113,7 @@ public class References {
         addSignatureRef(sig.toString());
     }
 
-    private void addFieldRef(FieldReference reference, boolean isStatic) {
+    private void addFieldRef(@NotNull FieldReference reference, boolean isStatic) {
         addTypeRef(reference.getDefiningClass());
 
         addStringRef(reference.getName());
@@ -132,7 +123,7 @@ public class References {
         fieldRefs.add(new MyFieldRef(isStatic, reference));
     }
 
-    private void addMethodRef(MethodReference reference, boolean isStatic) {
+    private void addMethodRef(@NotNull MethodReference reference, boolean isStatic) {
         addTypeRef(reference.getDefiningClass());
 
         addStringRef(reference.getName());
@@ -142,7 +133,7 @@ public class References {
         methodRefs.add(new MyMethodRef(isStatic, reference));
     }
 
-    private void parseReferences(DexBackedDexFile dexFile) {
+    private void parseReferences(@NotNull DexBackedDexFile dexFile) {
         //遍历所有classDef
         for (ClassDef classDef : dexFile.getClasses()) {
             //添加classDef自身相关
@@ -200,38 +191,19 @@ public class References {
     }
 
     //解析所有引用指令,得到各种引用信息或者检测不支持指令
-    private void collectReferences(MethodImplementation implementation) {
+    private void collectReferences(@NotNull MethodImplementation implementation) {
         for (Instruction instruction : implementation.getInstructions()) {
             switch (instruction.getOpcode()) {
                 //iget_x
-                case IGET_BYTE:
-                case IGET_BOOLEAN:
-                case IGET_CHAR:
-                case IGET_SHORT:
-                case IGET:
-                case IGET_WIDE:
-                case IGET_OBJECT:
-                    //iput_x
-                case IPUT_BYTE:
-                case IPUT_BOOLEAN:
-                case IPUT_CHAR:
-                case IPUT_SHORT:
-                case IPUT:
-                case IPUT_WIDE:
-                case IPUT_OBJECT: {
+                //iput_x
+                case IGET_BYTE, IGET_BOOLEAN, IGET_CHAR, IGET_SHORT, IGET, IGET_WIDE, IGET_OBJECT, IPUT_BYTE, IPUT_BOOLEAN, IPUT_CHAR, IPUT_SHORT, IPUT, IPUT_WIDE, IPUT_OBJECT -> {
                     FieldReference reference = (FieldReference) ((ReferenceInstruction) instruction).getReference();
 
                     addFieldRef(reference, false);
-                    break;
                 }
+
                 //sget_x
-                case SGET_BYTE:
-                case SGET_BOOLEAN:
-                case SGET_CHAR:
-                case SGET_SHORT:
-                case SGET:
-                case SGET_WIDE:
-                case SGET_OBJECT: {
+                case SGET_BYTE, SGET_BOOLEAN, SGET_CHAR, SGET_SHORT, SGET, SGET_WIDE, SGET_OBJECT -> {
                     FieldReference reference = (FieldReference) ((ReferenceInstruction) instruction).getReference();
 
                     final FieldReference directFieldRef = analyzer.getDirectFieldRef(reference);
@@ -240,66 +212,36 @@ public class References {
                     } else {
                         addFieldRef(reference, true);
                     }
-                    break;
                 }
+
                 //sput_x
-                case SPUT_BYTE:
-                case SPUT_BOOLEAN:
-                case SPUT_CHAR:
-                case SPUT_SHORT:
-                case SPUT:
-                case SPUT_WIDE:
-                case SPUT_OBJECT: {
+                case SPUT_BYTE, SPUT_BOOLEAN, SPUT_CHAR, SPUT_SHORT, SPUT, SPUT_WIDE, SPUT_OBJECT -> {
                     FieldReference reference = (FieldReference) ((ReferenceInstruction) instruction).getReference();
 
                     addFieldRef(reference, true);
-                    break;
                 }
-                case CONST_STRING:
-                case CONST_STRING_JUMBO: {
+                case CONST_STRING, CONST_STRING_JUMBO -> {
                     StringReference reference = (StringReference) ((ReferenceInstruction) instruction).getReference();
 
                     addConstStringRef(reference.getString());
-                    break;
                 }
-
-                case CONST_CLASS:
-                case CHECK_CAST:
-                case INSTANCE_OF:
-                case NEW_INSTANCE:
-                case NEW_ARRAY:
-                case FILLED_NEW_ARRAY:
-                case FILLED_NEW_ARRAY_RANGE: {
+                case CONST_CLASS, CHECK_CAST, INSTANCE_OF, NEW_INSTANCE, NEW_ARRAY, FILLED_NEW_ARRAY, FILLED_NEW_ARRAY_RANGE -> {
                     final TypeReference reference = (TypeReference) ((ReferenceInstruction) instruction).getReference();
 
                     addTypeRef(reference.getType());
 
-                    break;
                 }
-                case INVOKE_STATIC:
-                case INVOKE_STATIC_RANGE: {
+                case INVOKE_STATIC, INVOKE_STATIC_RANGE -> {
                     MethodReference reference = (MethodReference) ((ReferenceInstruction) instruction).getReference();
 
                     addMethodRef(reference, true);
-                    break;
                 }
-                case INVOKE_DIRECT:
-                case INVOKE_DIRECT_RANGE:
-                case INVOKE_SUPER:
-                case INVOKE_SUPER_RANGE:
-                case INVOKE_INTERFACE:
-                case INVOKE_INTERFACE_RANGE:
-                case INVOKE_VIRTUAL:
-                case INVOKE_VIRTUAL_RANGE: {
+                case INVOKE_DIRECT, INVOKE_DIRECT_RANGE, INVOKE_SUPER, INVOKE_SUPER_RANGE, INVOKE_INTERFACE, INVOKE_INTERFACE_RANGE, INVOKE_VIRTUAL, INVOKE_VIRTUAL_RANGE -> {
                     MethodReference reference = (MethodReference) ((ReferenceInstruction) instruction).getReference();
 
                     addMethodRef(reference, false);
-                    break;
                 }
-                case INVOKE_CUSTOM:
-                case INVOKE_CUSTOM_RANGE:
-                case INVOKE_POLYMORPHIC:
-                case INVOKE_POLYMORPHIC_RANGE: {
+                case INVOKE_CUSTOM, INVOKE_CUSTOM_RANGE, INVOKE_POLYMORPHIC, INVOKE_POLYMORPHIC_RANGE -> {
                     //todo 暂时没实现这些指令
                     throw new RuntimeException("Unsupported opcode： " + instruction.getOpcode());
                 }
@@ -313,6 +255,9 @@ public class References {
             }
         }
     }
+
+    final ArrayList<String> stringPool = new ArrayList<>();
+    private final HashMap<String, Integer> stringPoolIndexMap = new HashMap<>();
 
     private void makeStringPool() {
         //添加到有序列表里，同时缓存索引给其他引用使用
@@ -338,6 +283,12 @@ public class References {
         return stringPool;
     }
 
+
+    //用于重写const-string指令索引
+    final ArrayList<String> constStringPool = new ArrayList<>();
+    private final HashMap<String, Integer> constStringPoolIndexMap = new HashMap<>();
+
+
     private void makeConstStringPool() {
         //常量字符串
         constStringPool.addAll(constantStrings);
@@ -346,6 +297,7 @@ public class References {
             constStringPoolIndexMap.put(constStringPool.get(i), i);
         }
     }
+
 
     public List<String> getConstantStringPool() {
         return constStringPool;
@@ -358,6 +310,10 @@ public class References {
         }
         return integer;
     }
+
+
+    private final ArrayList<String> typePool = new ArrayList<>();
+    private final HashMap<String, Integer> typePoolIndexMap = new HashMap<>();
 
     private void makeTypePool() {
         final ArrayList<String> typePool = this.typePool;
@@ -397,6 +353,10 @@ public class References {
         return maxTypeLen;
     }
 
+    //保持跟type pool一致(顺序和大小)，className只是去掉L;的类型字符串，如果基本类型则不处理比如I,B
+    private final ArrayList<String> classNamePool = new ArrayList<>();
+    private final HashMap<String, Integer> classNamePoolIndexMap = new HashMap<>();
+
     private void makeClassNamePool() {
         for (String type : typePool) {
             classNamePool.add(typeToClassName(type));
@@ -420,6 +380,10 @@ public class References {
         return classNamePool;
     }
 
+    //方法签名及索引
+    private final ArrayList<String> signaturePool = new ArrayList<>();
+    private final HashMap<String, Integer> signaturePoolIndexMap = new HashMap<>();
+
     private void makeSignaturePool() {
         final ArrayList<String> classNamePool = this.signaturePool;
         classNamePool.addAll(signatureRefs);
@@ -441,6 +405,9 @@ public class References {
     public List<String> getSignaturePool() {
         return signaturePool;
     }
+
+    private final ArrayList<FieldReference> fieldPool = new ArrayList<>();
+    private final HashMap<FieldReference, Integer> fieldPoolIndexMap = new HashMap<>();
 
     private void makeFieldPool() {
         final ArrayList<FieldReference> fieldPool = this.fieldPool;
@@ -465,6 +432,9 @@ public class References {
     public List<FieldReference> getFieldPool() {
         return fieldPool;
     }
+
+    private final ArrayList<MethodReference> methodPool = new ArrayList<>();
+    private final HashMap<MethodReference, Integer> methodPoolIndexMap = new HashMap<>();
 
     private void makeMethodPool() {
         final ArrayList<MethodReference> methodPool = this.methodPool;

@@ -2,8 +2,8 @@ package com.nmmedit.apkprotect.dex2c.converter.instructionrewriter;
 
 import com.android.tools.smali.dexlib2.Opcode;
 import com.android.tools.smali.dexlib2.Opcodes;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +22,7 @@ public class NoneInstructionRewriter extends InstructionRewriter {
         return value;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     protected List<Opcode> getOpcodeList() {
         final List<Opcode> opcodeList = new ArrayList<>();

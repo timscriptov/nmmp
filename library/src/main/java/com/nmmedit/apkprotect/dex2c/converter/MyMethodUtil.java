@@ -3,12 +3,12 @@ package com.nmmedit.apkprotect.dex2c.converter;
 import com.android.tools.smali.dexlib2.AccessFlags;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.android.tools.smali.util.Hex;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class MyMethodUtil {
-    public static boolean isConstructorOrAbstract(Method method) {
+    public static boolean isConstructorOrAbstract(@NotNull Method method) {
         String name = method.getName();
         if (name.equals("<init>") || name.equals("<clinit>")) {//构造方法或静态构造方法
             return true;
@@ -19,14 +19,14 @@ public class MyMethodUtil {
                 || AccessFlags.ABSTRACT.isSet(accessFlags);
     }
 
-    public static boolean isBridgeOrSynthetic(Method method) {
+    public static boolean isBridgeOrSynthetic(@NotNull Method method) {
         int flags = method.getAccessFlags();
         return AccessFlags.BRIDGE.isSet(flags) ||
                 AccessFlags.SYNTHETIC.isSet(flags);
     }
 
-    @Nonnull
-    public static String getMethodSignature(List<? extends CharSequence> parameterTypes, String returnType) {
+    @NotNull
+    public static String getMethodSignature(@NotNull List<? extends CharSequence> parameterTypes, String returnType) {
         StringBuilder sig = new StringBuilder();
         sig.append("(");
         for (CharSequence parameterType : parameterTypes) {
@@ -38,9 +38,9 @@ public class MyMethodUtil {
     }
 
     //jni函数命名规则
-    @Nonnull
+    @NotNull
     public static String getJniFunctionName(String className, String methodName,
-                                            List<? extends CharSequence> parameterTypes, String returnType) {
+                                            @NotNull List<? extends CharSequence> parameterTypes, String returnType) {
 
         StringBuilder funcName = new StringBuilder("Java_");
 
@@ -62,28 +62,20 @@ public class MyMethodUtil {
         return funcName.toString();
     }
 
-    private static String nameReplace(String s) {
+    private static @NotNull String nameReplace(@NotNull String s) {
         int length = s.length();
         StringBuilder sb = new StringBuilder(length * 6);
         for (int i = 0; i < length; i++) {
             char c = s.charAt(i);
             switch (c) {
-                case '_':
-                    sb.append("_1");
-                    break;
-                case ';':
-                    sb.append("_2");
-                    break;
-                case '[':
-                    sb.append("_3");
-                    break;
-                case '$':
-                case '-':
-                case '+':
+                case '_' -> sb.append("_1");
+                case ';' -> sb.append("_2");
+                case '[' -> sb.append("_3");
+                case '$', '-', '+' -> {
                     sb.append("_0");
                     sb.append(Hex.u2(c));
-                    break;
-                default:
+                }
+                default -> {
                     if (
                             ((c & 0xFFFF) > 0x7F)
                     ) {
@@ -93,7 +85,7 @@ public class MyMethodUtil {
                     } else {
                         sb.append(c);
                     }
-                    break;
+                }
             }
         }
         return sb.toString();

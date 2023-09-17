@@ -11,8 +11,9 @@ import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.google.common.collect.HashMultimap;
 import com.nmmedit.apkprotect.dex2c.DexConfig;
 import com.nmmedit.apkprotect.dex2c.converter.instructionrewriter.InstructionRewriter;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
@@ -35,9 +36,9 @@ public class JniCodeGenerator {
     private final InstructionRewriter instructionRewriter;
     private final DexBackedDexFile dexFile;
 
-    public JniCodeGenerator(@Nonnull DexBackedDexFile dexFile,
-                            @Nonnull ClassAnalyzer analyzer,
-                            @Nonnull InstructionRewriter instructionRewriter) {
+    public JniCodeGenerator(@NotNull DexBackedDexFile dexFile,
+                            @NotNull ClassAnalyzer analyzer,
+                            @NotNull InstructionRewriter instructionRewriter) {
         this.dexFile = dexFile;
 
 //      根据dex里字符串常量,类型常量等生成符号解析代码,给vm提供符号信息
@@ -49,34 +50,7 @@ public class JniCodeGenerator {
 
     }
 
-    public static String getJNIType(String type) {
-        switch (type) {
-            case "Z":
-                return "jboolean";
-            case "B":
-                return "jbyte";
-            case "S":
-                return "jshort";
-            case "C":
-                return "jchar";
-            case "I":
-                return "jint";
-            case "F":
-                return "jfloat";
-            case "J":
-                return "jlong";
-            case "D":
-                return "jdouble";
-//            case "Ljava/lang/String;":
-//                return "jstring";
-            case "V":
-                return "void";
-            default:
-                return "jobject";
-        }
-    }
-
-    public void addMethod(Method method, Writer writer) throws IOException {
+    public void addMethod(@NotNull Method method, Writer writer) throws IOException {
         final MethodImplementation implementation = method.getImplementation();
         if (implementation == null) {
             return;
@@ -174,7 +148,7 @@ public class JniCodeGenerator {
                 params.append(", ");
             }
         }
-        if (params.length() > 0) {
+        if (!params.isEmpty()) {
             writer.append(", ").append(params.toString());
         }
         writer.append(") {\n");
@@ -258,7 +232,7 @@ public class JniCodeGenerator {
         return nativeMethodOffsets;
     }
 
-    public void generate(DexConfig config, Writer resolverWriter, Writer codeWriter) throws IOException {
+    public void generate(@NotNull DexConfig config, Writer resolverWriter, @NotNull Writer codeWriter) throws IOException {
         resolverCodeGenerator.generate(resolverWriter);
 
         codeWriter.write(String.format("\n" +
@@ -421,6 +395,23 @@ public class JniCodeGenerator {
                         "}\n\n"
                 , funName)
         );
+    }
+
+    @Contract(pure = true)
+    public static @NotNull String getJNIType(@NotNull String type) {
+        return switch (type) {
+            case "Z" -> "jboolean";
+            case "B" -> "jbyte";
+            case "S" -> "jshort";
+            case "C" -> "jchar";
+            case "I" -> "jint";
+            case "F" -> "jfloat";
+            case "J" -> "jlong";
+            case "D" -> "jdouble";
+//            case "Ljava/lang/String;" -> "jstring";
+            case "V" -> "void";
+            default -> "jobject";
+        };
     }
 
     private static class MyMethod {

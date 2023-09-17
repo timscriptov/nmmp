@@ -38,12 +38,11 @@ public class Dex2c {
      * @return 输出结果配置
      * @throws IOException
      */
-    @NotNull
-    public static GlobalDexConfig handleAllDex(@NotNull List<File> dexFiles,
-                                               @NotNull ClassAndMethodFilter filter,
-                                               @NotNull InstructionRewriter instructionRewriter,
-                                               @NotNull ClassAnalyzer classAnalyzer,
-                                               @NotNull File outDir) throws IOException {
+    public static @NotNull GlobalDexConfig handleAllDex(@NotNull List<File> dexFiles,
+                                                        @NotNull ClassAndMethodFilter filter,
+                                                        @NotNull InstructionRewriter instructionRewriter,
+                                                        @NotNull ClassAnalyzer classAnalyzer,
+                                                        @NotNull File outDir) throws IOException {
         if (!outDir.exists()) outDir.mkdirs();
         final GlobalDexConfig globalConfig = new GlobalDexConfig(outDir);
 
@@ -62,12 +61,11 @@ public class Dex2c {
     /**
      * 处理单个dex文件
      */
-    @NotNull
-    public static DexConfig handleDex(@NotNull File dexFile,
-                                      @NotNull ClassAndMethodFilter filter,
-                                      @NotNull ClassAnalyzer classAnalyzer,
-                                      @NotNull InstructionRewriter instructionRewriter,
-                                      @NotNull File outDir) throws IOException {
+    public static @NotNull DexConfig handleDex(@NotNull File dexFile,
+                                               @NotNull ClassAndMethodFilter filter,
+                                               @NotNull ClassAnalyzer classAnalyzer,
+                                               @NotNull InstructionRewriter instructionRewriter,
+                                               @NotNull File outDir) throws IOException {
         return handleDex(new BufferedInputStream(new FileInputStream(dexFile)),
                 dexFile.getName(),
                 filter,
@@ -76,12 +74,11 @@ public class Dex2c {
                 outDir);
     }
 
-    @NotNull
-    public static DexConfig handleModuleDex(@NotNull File dexFile,
-                                            @NotNull ClassAndMethodFilter filter,
-                                            @NotNull ClassAnalyzer classAnalyzer,
-                                            @NotNull InstructionRewriter instructionRewriter,
-                                            @NotNull File outDir) throws IOException {
+    public static @NotNull DexConfig handleModuleDex(@NotNull File dexFile,
+                                                     @NotNull ClassAndMethodFilter filter,
+                                                     @NotNull ClassAnalyzer classAnalyzer,
+                                                     @NotNull InstructionRewriter instructionRewriter,
+                                                     @NotNull File outDir) throws IOException {
         final GlobalDexConfig globalDexConfig = new GlobalDexConfig(outDir);
         final DexConfig dexConfig = handleDex(dexFile, filter, classAnalyzer, instructionRewriter, outDir);
         globalDexConfig.addDexConfig(dexConfig);
@@ -93,13 +90,12 @@ public class Dex2c {
     /**
      * 处理单个dex流
      */
-    @NotNull
-    public static DexConfig handleDex(@NotNull InputStream dex,
-                                      @NotNull String dexFileName,
-                                      @NotNull ClassAndMethodFilter filter,
-                                      @NotNull ClassAnalyzer classAnalyzer,
-                                      @NotNull InstructionRewriter instructionRewriter,
-                                      @NotNull File outDir) throws IOException {
+    public static @NotNull DexConfig handleDex(@NotNull InputStream dex,
+                                               @NotNull String dexFileName,
+                                               @NotNull ClassAndMethodFilter filter,
+                                               @NotNull ClassAnalyzer classAnalyzer,
+                                               @NotNull InstructionRewriter instructionRewriter,
+                                               @NotNull File outDir) throws IOException {
         if (!outDir.exists()) outDir.mkdirs();
         DexConfig config = splitDex(dex, dexFileName, filter, classAnalyzer, outDir);
 
@@ -127,12 +123,11 @@ public class Dex2c {
     }
 
     //分割dex产生两个dex,一个为壳dex,一个为实现dex,壳dex将会打包进apk,实现dex会被转换为c代码
-    @NotNull
-    private static DexConfig splitDex(@NotNull InputStream dex,
-                                      @NotNull String dexFileName,
-                                      @NotNull ClassAndMethodFilter filter,
-                                      @NotNull ClassAnalyzer classAnalyzer,
-                                      @NotNull File outDir) throws IOException {
+    private static @NotNull DexConfig splitDex(@NotNull InputStream dex,
+                                               @NotNull String dexFileName,
+                                               @NotNull ClassAndMethodFilter filter,
+                                               @NotNull ClassAnalyzer classAnalyzer,
+                                               @NotNull File outDir) throws IOException {
         DexBackedDexFile originDexFile = DexBackedDexFile.fromInputStream(
                 Opcodes.getDefault(),
                 dex);
@@ -196,17 +191,17 @@ public class Dex2c {
         return config;
     }
 
-    private static void addMethods(@NotNull List<Method> directMethods,
-                                   @NotNull List<Method> virtualMethods,
+    private static void addMethods(List<Method> directMethods,
+                                   List<Method> virtualMethods,
                                    @NotNull List<? extends Method> methods) {
         for (Method method : methods) {
             addMethod(directMethods, virtualMethods, method);
         }
     }
 
-    private static void addMethod(@NotNull List<Method> directMethods,
-                                  @NotNull List<Method> virtualMethods,
-                                  @NotNull Method method) {
+    private static void addMethod(List<Method> directMethods,
+                                  List<Method> virtualMethods,
+                                  Method method) {
         if (MethodUtil.isDirect(method)) {
             directMethods.add(method);
         } else {
@@ -215,11 +210,10 @@ public class Dex2c {
     }
 
     //在处理过的class的static{}块最前面添加注册本地方法代码,如果不存在static{}块则新增<clinit>方法
-    @NotNull
-    public static List<DexPool> injectCallRegisterNativeInsns(@NotNull DexConfig config,
-                                                              @NotNull DexPool lastDexPool,
-                                                              @NotNull Set<String> mainClassSet,
-                                                              int maxPoolSize) throws IOException {
+    public static @NotNull List<DexPool> injectCallRegisterNativeInsns(@NotNull DexConfig config,
+                                                                       DexPool lastDexPool,
+                                                                       Set<String> mainClassSet,
+                                                                       int maxPoolSize) throws IOException {
 
         DexBackedDexFile dexNativeFile = DexBackedDexFile.fromInputStream(
                 Opcodes.getDefault(),
@@ -243,7 +237,7 @@ public class Dex2c {
         return dexPools;
     }
 
-    private static void internClass(@NotNull DexConfig config, @NotNull DexPool dexPool, @NotNull ClassDef classDef) {
+    private static void internClass(@NotNull DexConfig config, DexPool dexPool, @NotNull ClassDef classDef) {
         final Set<String> classes = config.getHandledNativeClasses();
         final String type = classDef.getType();
         final String className = type.substring(1, type.length() - 1);

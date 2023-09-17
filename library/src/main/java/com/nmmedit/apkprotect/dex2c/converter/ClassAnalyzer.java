@@ -13,9 +13,9 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableFieldReference;
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,11 +39,11 @@ public class ClassAnalyzer {
         this.minSdk = minSdk;
     }
 
-    public void loadDexFile(@Nonnull File dexFile) throws IOException {
+    public void loadDexFile(@NotNull File dexFile) throws IOException {
         loadDexFile(DexBackedDexFile.fromInputStream(Opcodes.getDefault(), new BufferedInputStream(new FileInputStream(dexFile))));
     }
 
-    public void loadDexFile(@Nonnull DexBackedDexFile dexFile) {
+    public void loadDexFile(@NotNull DexBackedDexFile dexFile) {
         for (DexBackedClassDef classDef : dexFile.getClasses()) {
             allClasses.put(classDef.getType(), classDef);
         }
@@ -60,7 +60,7 @@ public class ClassAnalyzer {
 
     // android6下直接通过jni调用jna方法会直接崩溃,所以需要判断是否有调用jna方法的指令.issue #31
     // 遍历方法字节码,判断是否有直接调用jna方法的指令,如果有返回true
-    public boolean hasCallJnaMethod(@Nonnull Method method) {
+    public boolean hasCallJnaMethod(@NotNull Method method) {
         if (!hasJnaLib()) {
             return false;
         }
@@ -71,13 +71,13 @@ public class ClassAnalyzer {
         for (Instruction instruction : implementation.getInstructions()) {
             switch (instruction.getOpcode()) {
                 //jna调用用的是调用接口方法,所以只需要检测这两个指令
-                case INVOKE_INTERFACE:
-                case INVOKE_INTERFACE_RANGE:
+                case INVOKE_INTERFACE, INVOKE_INTERFACE_RANGE -> {
                     MethodReference methodReference = (MethodReference) ((ReferenceInstruction) instruction).getReference();
                     //如果调用的方法所在class实现接口中包含jna的Library则表示有直接调用jna的指令
                     if (matchInterface(allClasses.get(methodReference.getDefiningClass()), "Lcom/sun/jna/Library;")) {
                         return true;
                     }
+                }
             }
         }
         return false;
@@ -100,7 +100,7 @@ public class ClassAnalyzer {
     }
 
     //处理接口中静态域无法通过子类获得值问题
-    public FieldReference getDirectFieldRef(FieldReference reference) {
+    public FieldReference getDirectFieldRef(@NotNull FieldReference reference) {
         final ClassDef classDef = allClasses.get(reference.getDefiningClass());
         if (classDef == null) {//不再当前dex中或者在系统库
             return null;
@@ -139,7 +139,7 @@ public class ClassAnalyzer {
     }
 
     @Nullable
-    public MethodReference findDirectMethod(@Nonnull MethodReference method) {
+    public MethodReference findDirectMethod(@NotNull MethodReference method) {
         if (minSdk < 23) {
             final ClassDef classDef = allClasses.get(method.getDefiningClass());
             if (classDef == null) {
@@ -157,16 +157,16 @@ public class ClassAnalyzer {
     }
 
     @Nullable
-    public ClassDef getClassDef(@Nonnull String className) {
+    public ClassDef getClassDef(@NotNull String className) {
         return allClasses.get(className);
     }
 
     //先查找当前类的direct method,找不到则查找超类的direct method
     @Nullable
-    private MethodReference findDirectMethod(@Nonnull ClassDef thisClass,
-                                             @Nonnull String name,
-                                             @Nonnull List<? extends CharSequence> parameterTypes,
-                                             @Nonnull String returnType
+    private MethodReference findDirectMethod(@NotNull ClassDef thisClass,
+                                             @NotNull String name,
+                                             @NotNull List<? extends CharSequence> parameterTypes,
+                                             @NotNull String returnType
     ) {
         for (ClassDef classDef = thisClass; classDef != null; classDef = allClasses.get(classDef.getSuperclass())) {
             for (Method directMethod : classDef.getDirectMethods()) {
@@ -183,10 +183,10 @@ public class ClassAnalyzer {
 
     // 在当前类中查找方法,如果找不到则查找父类
     @Nullable
-    public MethodReference findMethod(@Nonnull ClassDef thisClass,
-                                      @Nonnull String name,
-                                      @Nonnull List<? extends CharSequence> parameterTypes,
-                                      @Nonnull String returnType
+    public MethodReference findMethod(@NotNull ClassDef thisClass,
+                                      @NotNull String name,
+                                      @NotNull List<? extends CharSequence> parameterTypes,
+                                      @NotNull String returnType
     ) {
         for (ClassDef classDef = thisClass; classDef != null; classDef = allClasses.get(classDef.getSuperclass())) {
             for (Method method : classDef.getMethods()) {

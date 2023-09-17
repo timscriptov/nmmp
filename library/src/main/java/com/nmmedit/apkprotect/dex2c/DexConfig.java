@@ -2,7 +2,6 @@ package com.nmmedit.apkprotect.dex2c;
 
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.google.common.collect.HashMultimap;
-import com.nmmedit.apkprotect.data.Prefs;
 import com.nmmedit.apkprotect.dex2c.converter.JniCodeGenerator;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,7 +25,7 @@ public class DexConfig {
     private Set<String> handledNativeClasses;
     private Map<String, Integer> nativeMethodOffsets;
 
-    public DexConfig(@NotNull File outputDir, @NotNull String dexFileName) {
+    public DexConfig(File outputDir, @NotNull String dexFileName) {
         this.outputDir = outputDir;
         int i = dexFileName.lastIndexOf('.');
         if (i != -1) {
@@ -36,23 +35,19 @@ public class DexConfig {
         }
     }
 
-    @NotNull
     public File getOutputDir() {
         return outputDir;
     }
 
-    @NotNull
     public String getDexName() {
         return dexName;
     }
 
     //每个处理过的class,需要调用这个类里的注册函数,注册函数名和classes.dex相关
-    @NotNull
     public String getRegisterNativesClassName() {
-        return Prefs.getRegisterNativesClassName();
+        return "com/nmmedit/protect/NativeUtil";
     }
 
-    @NotNull
     public String getRegisterNativesMethodName() {
         return getDexName() + "Init0";
     }
@@ -62,7 +57,7 @@ public class DexConfig {
         return handledNativeClasses;
     }
 
-    public int getOffsetFromClassName(@NotNull String className) {
+    public int getOffsetFromClassName(String className) {
         return nativeMethodOffsets.get(className);
     }
 
@@ -71,18 +66,18 @@ public class DexConfig {
         nativeMethodOffsets = codeGenerator.getNativeMethodOffsets();
     }
 
-    public HashMultimap<String, List<? extends Method>> getShellMethods() {
-        return shellMethods;
-    }
 
     public void setShellMethods(HashMultimap<String, List<? extends Method>> shellMethods) {
         this.shellMethods = shellMethods;
     }
 
+    public HashMultimap<String, List<? extends Method>> getShellMethods() {
+        return shellMethods;
+    }
+
     /**
      * 方法被标识为native的dex,用于替换原dex
      */
-    @NotNull
     public File getShellDexFile() {
         return new File(outputDir, dexName + "_shell.dex");
     }
@@ -90,7 +85,6 @@ public class DexConfig {
     /**
      * 符号及方法实现dex文件,用于生成c代码
      */
-    @NotNull
     public File getImplDexFile() {
         return new File(outputDir, dexName + "_impl.dex");
     }
@@ -98,7 +92,6 @@ public class DexConfig {
     /**
      * 本地方法实现
      */
-    @NotNull
     public File getNativeFunctionsFile() {
         return new File(outputDir, dexName + "_native_functions.c");
     }
@@ -106,7 +99,6 @@ public class DexConfig {
     /**
      * 初始化代码头文件及初始化函数名,提供函数给外部调用
      */
-    @NotNull
     public HeaderFileAndSetupFuncName getHeaderFileAndSetupFunc() {
         return new HeaderFileAndSetupFuncName(
                 new File(outputDir, dexName + "_native_functions.h"),
@@ -117,18 +109,15 @@ public class DexConfig {
     /**
      * 符号解析器代码文件
      */
-    @NotNull
     public File getResolverFile() {
         return new File(outputDir, dexName + "_resolver.c");
     }
 
     public static class HeaderFileAndSetupFuncName {
-        @NotNull
         public final File headerFile;
-        @NotNull
         public final String setupFunctionName;
 
-        private HeaderFileAndSetupFuncName(@NotNull File headerFile, @NotNull String setupFunctionName) {
+        private HeaderFileAndSetupFuncName(File headerFile, String setupFunctionName) {
             this.headerFile = headerFile;
             this.setupFunctionName = setupFunctionName;
         }

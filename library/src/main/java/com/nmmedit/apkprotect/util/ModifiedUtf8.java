@@ -4,9 +4,6 @@ import java.io.UTFDataFormatException;
 
 //来自java.nio.charset.ModifiedUtf8
 public class ModifiedUtf8 {
-    private ModifiedUtf8() {
-    }
-
     /**
      * Decodes a byte array containing <i>modified UTF-8</i> bytes into a string.
      *
@@ -101,5 +98,8 @@ public class ModifiedUtf8 {
         byte[] result = new byte[utfCount];
         ModifiedUtf8.encode(result, 0, s);
         return result;
+    }
+
+    private ModifiedUtf8() {
     }
 }
