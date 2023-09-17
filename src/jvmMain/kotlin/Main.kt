@@ -291,11 +291,11 @@ fun App() {
                     Card(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        val listState = rememberLazyListState()
+//                        val listState = rememberLazyListState()
                         LazyColumn(
                             modifier = Modifier
                                 .padding(8.dp),
-                            state = listState
+//                            state = listState
                         ) {
                             if (logs.isNotEmpty()) {
                                 items(logs) { log ->
@@ -307,11 +307,11 @@ fun App() {
                                         Text(log)
                                     }
                                     Divider(modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
-                                    if (logs.size > 1) {
-                                        LaunchedEffect(listState) {
-                                            listState.scrollToItem(logs.size - 1)
-                                        }
-                                    }
+//                                    if (logs.size > 1) {
+//                                        LaunchedEffect(listState) {
+//                                            listState.scrollToItem(logs.size - 1)
+//                                        }
+//                                    }
                                 }
                             }
                         }

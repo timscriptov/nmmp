@@ -38,14 +38,20 @@ class VmpTask(
     }
 
     override fun info(msg: String?) {
-        msg?.let { logs.add("I: $it") }
+        if(!msg.isNullOrEmpty()) {
+            logs.add("I: $msg")
+        }
     }
 
     override fun error(msg: String?) {
-        msg?.let { logs.add("E: $it") }
+        if(!msg.isNullOrEmpty()) {
+            logs.add("E: $msg")
+        }
     }
 
     override fun warning(msg: String?) {
-        msg?.let { logs.add("W: $it") }
+        if(!msg.isNullOrEmpty()) {
+            logs.add("W: $msg")
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.nmmedit.apkprotect;
 
 import com.nmmedit.apkprotect.data.Prefs;
+import com.nmmedit.apkprotect.log.ApkLogger;
 import com.nmmedit.apkprotect.util.FileHelper;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,6 +10,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.nmmedit.apkprotect.ApkProtect.apkLogger;
 
 public class BuildNativeLib {
     public static @NotNull Map<String, Map<File, File>> generateNativeLibs(@NotNull File outDir,
@@ -72,7 +75,12 @@ public class BuildNativeLib {
     }
 
     private static void execCmd(List<String> cmds) throws IOException {
-        System.out.println(cmds);
+        final ApkLogger logger = apkLogger;
+        if (logger != null) {
+            logger.info(String.valueOf(cmds));
+        } else {
+            System.out.println(cmds);
+        }
         final ProcessBuilder builder = new ProcessBuilder()
                 .command(cmds);
 
@@ -84,7 +92,11 @@ public class BuildNativeLib {
         try {
             final int exitStatus = process.waitFor();
             if (exitStatus != 0) {
-                throw new IOException(String.format("Cmd '%s' exec failed", cmds.toString()));
+                if (logger != null) {
+                    logger.error(String.format("Cmd '%s' exec failed", cmds.toString()));
+                } else {
+                    throw new IOException(String.format("Cmd '%s' exec failed", cmds.toString()));
+                }
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -94,8 +106,13 @@ public class BuildNativeLib {
     private static void printOutput(InputStream inputStream) throws IOException {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String line;
+        final ApkLogger logger = apkLogger;
         while ((line = reader.readLine()) != null) {
-            System.out.println(line);
+            if (logger != null) {
+                logger.info(line);
+            } else {
+                System.out.println(line);
+            }
         }
     }
 
@@ -224,8 +241,13 @@ public class BuildNativeLib {
                 //windows
                 vmFile = new File(getBuildPath(), "vm/" + vm);
             }
+            final ApkLogger logger = apkLogger;
             if (!vmFile.exists()) {
-                throw new RuntimeException("Not Found so: " + vmFile.getAbsolutePath());
+                if (logger != null) {
+                    logger.warning("Not Found so: " + vmFile.getAbsolutePath());
+                } else {
+                    throw new RuntimeException("Not Found so: " + vmFile.getAbsolutePath());
+                }
             }
 
             map.put(vmFile, new File(stripOutputDir, vm));
@@ -237,7 +259,11 @@ public class BuildNativeLib {
                 vmpFile = new File(getBuildPath(), vmp);
             }
             if (!vmpFile.exists()) {
-                throw new RuntimeException("Not Found so: " + vmpFile.getAbsolutePath());
+                if (logger != null) {
+                    logger.warning("Not Found so: " + vmpFile.getAbsolutePath());
+                } else {
+                    throw new RuntimeException("Not Found so: " + vmpFile.getAbsolutePath());
+                }
             }
             map.put(vmpFile, new File(stripOutputDir, vmp));
 

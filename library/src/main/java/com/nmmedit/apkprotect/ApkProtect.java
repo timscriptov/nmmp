@@ -45,7 +45,7 @@ public class ApkProtect {
 
     private final ClassAnalyzer classAnalyzer;
     @Nullable
-    private static ApkLogger apkLogger;
+    public static ApkLogger apkLogger;
 
     private ApkProtect(ApkFolders apkFolders,
                        InstructionRewriter instructionRewriter,
@@ -70,13 +70,11 @@ public class ApkProtect {
             byte[] manifestBytes = ApkUtils.getFile(apkFile, ANDROID_MANIFEST_XML);
             if (manifestBytes == null) {
                 if (logger != null) {
-                    logger.error("Not is apk");
+                    logger.warning("Not is apk");
                 } else {
                     throw new RuntimeException("Not is apk");
                 }
             }
-            final ManifestParser parser = new ManifestParser(manifestBytes);
-            final String packageName = parser.getPackageName();
 
             //生成一些需要改变的c代码(随机opcode后的头文件及apk验证代码等)
             CmakeUtils.generateCSources(apkFolders.getDex2cSrcDir(), instructionRewriter);
@@ -85,11 +83,12 @@ public class ApkProtect {
             List<File> files = getClassesFiles(apkFile, zipExtractDir);
             if (files.isEmpty()) {
                 if (logger != null) {
-                    logger.error("No classes.dex");
+                    logger.warning("No classes.dex");
                 } else {
                     throw new RuntimeException("No classes.dex");
                 }
             }
+            final ManifestParser parser = new ManifestParser(manifestBytes);
             final String minSdkVersion = parser.getMinSdkVersion();
             int minSdk = 21;
             if (minSdkVersion != null && !minSdkVersion.isEmpty()) {
@@ -468,14 +467,14 @@ public class ApkProtect {
             final ApkLogger logger = apkLogger;
             if (instructionRewriter == null) {
                 if (logger != null) {
-                    logger.error("instructionRewriter == null");
+                    logger.warning("instructionRewriter == null");
                 } else {
                     throw new RuntimeException("instructionRewriter == null");
                 }
             }
             if (classAnalyzer == null) {
                 if (logger != null) {
-                    logger.error("classAnalyzer == null");
+                    logger.warning("classAnalyzer == null");
                 } else {
                     throw new RuntimeException("classAnalyzer == null");
                 }
