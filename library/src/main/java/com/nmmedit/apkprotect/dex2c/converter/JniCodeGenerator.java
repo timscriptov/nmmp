@@ -50,6 +50,23 @@ public class JniCodeGenerator {
 
     }
 
+    @Contract(pure = true)
+    public static @NotNull String getJNIType(@NotNull String type) {
+        return switch (type) {
+            case "Z" -> "jboolean";
+            case "B" -> "jbyte";
+            case "S" -> "jshort";
+            case "C" -> "jchar";
+            case "I" -> "jint";
+            case "F" -> "jfloat";
+            case "J" -> "jlong";
+            case "D" -> "jdouble";
+//            case "Ljava/lang/String;" -> "jstring";
+            case "V" -> "void";
+            default -> "jobject";
+        };
+    }
+
     public void addMethod(@NotNull Method method, Writer writer) throws IOException {
         final MethodImplementation implementation = method.getImplementation();
         if (implementation == null) {
@@ -395,23 +412,6 @@ public class JniCodeGenerator {
                         "}\n\n"
                 , funName)
         );
-    }
-
-    @Contract(pure = true)
-    public static @NotNull String getJNIType(@NotNull String type) {
-        return switch (type) {
-            case "Z" -> "jboolean";
-            case "B" -> "jbyte";
-            case "S" -> "jshort";
-            case "C" -> "jchar";
-            case "I" -> "jint";
-            case "F" -> "jfloat";
-            case "J" -> "jlong";
-            case "D" -> "jdouble";
-//            case "Ljava/lang/String;" -> "jstring";
-            case "V" -> "void";
-            default -> "jobject";
-        };
     }
 
     private static class MyMethod {

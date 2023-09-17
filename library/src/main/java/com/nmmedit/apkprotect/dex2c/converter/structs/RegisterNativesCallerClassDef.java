@@ -42,12 +42,25 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
         this.registerNativeMethodName = registerNativeMethodName;
     }
 
+    @Contract("_, _ -> new")
+    private static @NotNull BuilderInstruction buildConstInst(int regA, int i) {
+        if (i < 0) {
+            throw new RuntimeException("invalid index " + i);
+        }
+        if (i <= 7) {
+            return new BuilderInstruction11n(Opcode.CONST_4, regA, i);
+        }
+        if (i <= 0x7fff) {
+            return new BuilderInstruction21s(Opcode.CONST_16, regA, i);
+        }
+        return new BuilderInstruction31i(Opcode.CONST, regA, i);
+    }
+
     @NotNull
     @Override
     public String getType() {
         return classDef.getType();
     }
-
 
     @Override
     public int getAccessFlags() {
@@ -133,7 +146,6 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
     public Iterable<? extends Method> getMethods() {
         return Iterables.concat(getDirectMethods(), getVirtualMethods());
     }
-
 
     @Override
     public void validateReference() throws InvalidReferenceException {
@@ -266,19 +278,5 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
             ));
             return insns;
         }
-    }
-
-    @Contract("_, _ -> new")
-    private static @NotNull BuilderInstruction buildConstInst(int regA, int i) {
-        if (i < 0) {
-            throw new RuntimeException("invalid index " + i);
-        }
-        if (i <= 7) {
-            return new BuilderInstruction11n(Opcode.CONST_4, regA, i);
-        }
-        if (i <= 0x7fff) {
-            return new BuilderInstruction21s(Opcode.CONST_16, regA, i);
-        }
-        return new BuilderInstruction31i(Opcode.CONST, regA, i);
     }
 }

@@ -21,21 +21,6 @@ public class MethodToNativeVisitor extends ClassVisitor {
         this.convertedMethods = convertedMethods;
     }
 
-    @Override
-    public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-        final List<AsmMethod> myMethods = convertedMethods.get(new AsmMethod(access, name, descriptor));
-        if (myMethods != null && !myMethods.isEmpty()) {
-            if (myMethods.size() == 1) {
-                final MethodVisitor mv = super.visitMethod(access | Opcodes.ACC_NATIVE, name, descriptor, signature, exceptions);
-                //不需要code等部分
-                return null;
-            }
-            // myMethods.size()==2
-            // todo 生成第一个方法调用第二个方法代码，解决一些native方法无法正常初始化问题。
-        }
-        return super.visitMethod(access, name, descriptor, signature, exceptions);
-    }
-
     //生成第一个方法调用第二个的字节码
     private static void genCall(ClassVisitor cv, @NotNull AsmMethod method1, @NotNull AsmMethod method2) {
         final String sig1 = method1.descriptor;
@@ -49,5 +34,20 @@ public class MethodToNativeVisitor extends ClassVisitor {
 
     private static void genLoadInsn(MethodVisitor mv, int slotIdx, String methodName, String sig) {
 
+    }
+
+    @Override
+    public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+        final List<AsmMethod> myMethods = convertedMethods.get(new AsmMethod(access, name, descriptor));
+        if (myMethods != null && !myMethods.isEmpty()) {
+            if (myMethods.size() == 1) {
+                final MethodVisitor mv = super.visitMethod(access | Opcodes.ACC_NATIVE, name, descriptor, signature, exceptions);
+                //不需要code等部分
+                return null;
+            }
+            // myMethods.size()==2
+            // todo 生成第一个方法调用第二个方法代码，解决一些native方法无法正常初始化问题。
+        }
+        return super.visitMethod(access, name, descriptor, signature, exceptions);
     }
 }

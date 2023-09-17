@@ -36,13 +36,22 @@ public abstract class InstructionRewriter {
 
 
     final Opcodes opcodes;
+    private final Comparator<SwitchElement> switchElementComparator = new Comparator<SwitchElement>() {
+        @Override
+        public int compare(@NotNull SwitchElement element1, @NotNull SwitchElement element2) {
+            return Ints.compare(element1.getKey(), element2.getKey());
+        }
+    };
     // 指令重写需要的引用信息
     private References references;
     private ClassAnalyzer classAnalyzer;
 
-
     public InstructionRewriter(@NotNull Opcodes opcodes) {
         this.opcodes = opcodes;
+    }
+
+    private static int packNibbles(int a, int b) {
+        return (b << 4) | a;
     }
 
     public void loadReferences(
@@ -534,7 +543,6 @@ public abstract class InstructionRewriter {
         }
     }
 
-
     public void write(@NotNull DexDataWriter writer,
                       @NotNull Instruction3rc instruction) {
         try {
@@ -546,7 +554,6 @@ public abstract class InstructionRewriter {
             throw new RuntimeException(ex);
         }
     }
-
 
     public void write(@NotNull DexDataWriter writer,
                       @NotNull Instruction51l instruction) {
@@ -615,13 +622,6 @@ public abstract class InstructionRewriter {
         }
     }
 
-    private final Comparator<SwitchElement> switchElementComparator = new Comparator<SwitchElement>() {
-        @Override
-        public int compare(@NotNull SwitchElement element1, @NotNull SwitchElement element2) {
-            return Ints.compare(element1.getKey(), element2.getKey());
-        }
-    };
-
     public void write(@NotNull DexDataWriter writer,
                       @NotNull PackedSwitchPayload instruction) {
         try {
@@ -641,11 +641,6 @@ public abstract class InstructionRewriter {
             throw new RuntimeException(ex);
         }
     }
-
-    private static int packNibbles(int a, int b) {
-        return (b << 4) | a;
-    }
-
 
     private int getReferenceIndex(@NotNull ReferenceInstruction referenceInstruction) {
         switch (referenceInstruction.getOpcode()) {

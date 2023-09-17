@@ -50,6 +50,60 @@ public class AabProtect {
         this.filter = filter;
     }
 
+    @NotNull
+    private static List<File> getClassesFiles(File apkFile, File zipExtractDir) throws IOException {
+        List<File> files = ApkUtils.extractFiles(apkFile, "base/dex/classes(\\d+)*\\.dex", zipExtractDir);
+        //根据classes索引大小排序
+        files.sort((file, t1) -> {
+            final String numb = file.getName().replace("classes", "").replace(".dex", "");
+            final String numb2 = t1.getName().replace("classes", "").replace(".dex", "");
+            int n, n2;
+            if ("".equals(numb)) {
+                n = 0;
+            } else {
+                n = Integer.parseInt(numb);
+            }
+            if ("".equals(numb2)) {
+                n2 = 0;
+            } else {
+                n2 = Integer.parseInt(numb2);
+            }
+            return n - n2;
+        });
+        return files;
+    }
+
+    //根据aab文件得到abi，如果没有本地库则返回x86及arm所有abi
+    private static @NotNull List<String> getAbis(File aab) throws IOException {
+        final Pattern pattern = Pattern.compile("base/lib/(.*)/.*\\.so");
+        final Enumeration<? extends ZipEntry> entries;
+        try (ZipFile zipFile = new ZipFile(aab)) {
+            entries = zipFile.getEntries();
+
+        }
+        Set<String> abis = new HashSet<>();
+        while (entries.hasMoreElements()) {
+            final ZipEntry entry = entries.nextElement();
+            final Matcher matcher = pattern.matcher(entry.getName());
+            if (matcher.matches()) {
+                abis.add(matcher.group(1));
+            }
+        }
+        //不支持armeabi，可能还要删除mips相关
+        abis.remove("armeabi");
+        abis.remove("mips");
+        abis.remove("mips64");
+
+        if (abis.isEmpty()) {
+            return Arrays.asList("armeabi-v7a", "arm64-v8a", "x86", "x86_64");
+        }
+        return new ArrayList<>(abis);
+    }
+
+    public static @NotNull InputStream getAabProguardMapping(File aab) throws IOException {
+        return FileHelper.bytesToInputStream(ZipHelper.getZipFileContent(aab, BUNDLE_MAPPING));
+    }
+
     public void run() throws IOException {
         final File inAab = aabFolders.getInAab();
         final File zipExtractDir = aabFolders.getZipExtractTempDir();
@@ -195,62 +249,6 @@ public class AabProtect {
             FileHelper.deleteFile(zipExtractDir);
         }
     }
-
-    @NotNull
-    private static List<File> getClassesFiles(File apkFile, File zipExtractDir) throws IOException {
-        List<File> files = ApkUtils.extractFiles(apkFile, "base/dex/classes(\\d+)*\\.dex", zipExtractDir);
-        //根据classes索引大小排序
-        files.sort((file, t1) -> {
-            final String numb = file.getName().replace("classes", "").replace(".dex", "");
-            final String numb2 = t1.getName().replace("classes", "").replace(".dex", "");
-            int n, n2;
-            if ("".equals(numb)) {
-                n = 0;
-            } else {
-                n = Integer.parseInt(numb);
-            }
-            if ("".equals(numb2)) {
-                n2 = 0;
-            } else {
-                n2 = Integer.parseInt(numb2);
-            }
-            return n - n2;
-        });
-        return files;
-    }
-
-    //根据aab文件得到abi，如果没有本地库则返回x86及arm所有abi
-    private static @NotNull List<String> getAbis(File aab) throws IOException {
-        final Pattern pattern = Pattern.compile("base/lib/(.*)/.*\\.so");
-        final Enumeration<? extends ZipEntry> entries;
-        try (ZipFile zipFile = new ZipFile(aab)) {
-            entries = zipFile.getEntries();
-
-        }
-        Set<String> abis = new HashSet<>();
-        while (entries.hasMoreElements()) {
-            final ZipEntry entry = entries.nextElement();
-            final Matcher matcher = pattern.matcher(entry.getName());
-            if (matcher.matches()) {
-                abis.add(matcher.group(1));
-            }
-        }
-        //不支持armeabi，可能还要删除mips相关
-        abis.remove("armeabi");
-        abis.remove("mips");
-        abis.remove("mips64");
-
-        if (abis.isEmpty()) {
-            return Arrays.asList("armeabi-v7a", "arm64-v8a", "x86", "x86_64");
-        }
-        return new ArrayList<>(abis);
-    }
-
-
-    public static @NotNull InputStream getAabProguardMapping(File aab) throws IOException {
-        return FileHelper.bytesToInputStream(ZipHelper.getZipFileContent(aab, BUNDLE_MAPPING));
-    }
-
 
     public static class Builder {
         private final AabFolders aabFolders;

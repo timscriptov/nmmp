@@ -25,11 +25,12 @@ object ZipHelper {
      */
     @JvmStatic
     @Throws(IOException::class)
-    fun getZipFileContent(zipFile: File, filename: String): ByteArray {
+    fun getZipFileContent(zipFile: File, filename: String): ByteArray? {
         ZipFile(zipFile).use {
-            it.getInputStream(it.getEntry(filename)).use { inputStream ->
+            it.getInputStream(it.getEntry(filename))?.use { inputStream ->
                 return inputStream.readBytes()
             }
+            return null
         }
     }
 

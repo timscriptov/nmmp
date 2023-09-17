@@ -48,6 +48,63 @@ public class AarProtect {
         this.classAnalyzer = classAnalyzer;
     }
 
+    private static byte[] modifyClass(InputStream inClass,
+                                      @NotNull Set<List<? extends Method>> convertedMethods,
+                                      String clsName,
+                                      String methodName,
+                                      int classIdx) throws IOException {
+        Map<AsmMethod, List<AsmMethod>> myMethods = new HashMap<>();
+        for (List<? extends Method> methods : convertedMethods) {
+            if (methods.isEmpty()) {
+                throw new IllegalStateException();
+            }
+            final Method method = methods.get(0);
+            final String sig = MyMethodUtil.getMethodSignature(method.getParameterTypes(), method.getReturnType());
+            final AsmMethod asmMethod = new AsmMethod(method.getAccessFlags(), method.getName(), sig);
+
+            if (methods.size() == 1) {
+                myMethods.put(asmMethod, Collections.singletonList(asmMethod));
+            } else if (methods.size() == 2) {
+                final Method method1 = methods.get(1);
+                final String sig1 = MyMethodUtil.getMethodSignature(method1.getParameterTypes(), method1.getReturnType());
+                final AsmMethod asmMethod1 = new AsmMethod(method1.getAccessFlags(), method1.getName(), sig1);
+
+                myMethods.put(asmMethod, Arrays.asList(asmMethod, asmMethod1));
+            }
+        }
+        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        final MethodToNativeVisitor methodToNativeVisitor = new MethodToNativeVisitor(Opcodes.ASM9, cw, myMethods);
+
+        final InjectStaticBlockVisitor visitor = new InjectStaticBlockVisitor(Opcodes.ASM9, methodToNativeVisitor,
+                clsName,
+                methodName,
+                classIdx);
+        final ClassReader cr = new ClassReader(inClass);
+        cr.accept(visitor, 0);
+        return cw.toByteArray();
+    }
+
+    @Contract(pure = true)
+    private static @NotNull List<String> getAbis() throws IOException {
+        return Arrays.asList(
+                "armeabi-v7a",
+                "arm64-v8a",
+                "x86",
+                "x86_64");
+    }
+
+    private static @NotNull File getClassesDex(File dexJar, @NotNull File zipExtractDir) throws IOException {
+        if (!zipExtractDir.exists()) zipExtractDir.mkdirs();
+        final File file = new File(zipExtractDir, "classes.dex");
+
+        byte[] jarBytes = ZipHelper.getZipFileContent(dexJar, "classes.dex");
+        if (jarBytes == null) {
+            throw new IllegalStateException("No classes.dex");
+        }
+        FileHelper.copyStream(FileHelper.bytesToInputStream(jarBytes), new FileOutputStream(file));
+        return file;
+    }
+
     public void run() throws IOException {
         final File aar = aarFolders.getAar();
         if (!aar.exists()) {
@@ -139,17 +196,20 @@ public class AarProtect {
                     if (entryName.endsWith(".class")) {
                         String type = "L" + entryName.substring(0, entryName.length() - ".class".length()) + ";";
                         if (modifiedMethods.containsKey(type)) {
-                            final InputStream inClass = FileHelper.bytesToInputStream(ZipHelper.getZipFileContent(classJar, entryName));
-                            final Set<List<? extends Method>> methods = modifiedMethods.get(type);
-                            //去除首尾L;
-                            final int classIdx = dexConfig.getOffsetFromClassName(type.substring(1, type.length() - 1));
-                            //生成新的class文件
-                            final byte[] newClassBytes = modifyClass(inClass, methods, dexConfig.getRegisterNativesClassName(), dexConfig.getRegisterNativesMethodName(), classIdx);
+                            final byte[] bytes = ZipHelper.getZipFileContent(classJar, entryName);
+                            if (bytes != null) {
+                                final InputStream inClass = FileHelper.bytesToInputStream(bytes);
+                                final Set<List<? extends Method>> methods = modifiedMethods.get(type);
+                                //去除首尾L;
+                                final int classIdx = dexConfig.getOffsetFromClassName(type.substring(1, type.length() - 1));
+                                //生成新的class文件
+                                final byte[] newClassBytes = modifyClass(inClass, methods, dexConfig.getRegisterNativesClassName(), dexConfig.getRegisterNativesMethodName(), classIdx);
 
-                            //添加进jar中
-                            zos.putNextEntry(entryName);
-                            zos.write(newClassBytes);
-                            zos.closeEntry();
+                                //添加进jar中
+                                zos.putNextEntry(entryName);
+                                zos.write(newClassBytes);
+                                zos.closeEntry();
+                            }
                             continue;
                         }
                     }
@@ -167,51 +227,6 @@ public class AarProtect {
             }
         }
         return outClassJar;
-    }
-
-    private static byte[] modifyClass(InputStream inClass,
-                                      @NotNull Set<List<? extends Method>> convertedMethods,
-                                      String clsName,
-                                      String methodName,
-                                      int classIdx) throws IOException {
-        Map<AsmMethod, List<AsmMethod>> myMethods = new HashMap<>();
-        for (List<? extends Method> methods : convertedMethods) {
-            if (methods.isEmpty()) {
-                throw new IllegalStateException();
-            }
-            final Method method = methods.get(0);
-            final String sig = MyMethodUtil.getMethodSignature(method.getParameterTypes(), method.getReturnType());
-            final AsmMethod asmMethod = new AsmMethod(method.getAccessFlags(), method.getName(), sig);
-
-            if (methods.size() == 1) {
-                myMethods.put(asmMethod, Collections.singletonList(asmMethod));
-            } else if (methods.size() == 2) {
-                final Method method1 = methods.get(1);
-                final String sig1 = MyMethodUtil.getMethodSignature(method1.getParameterTypes(), method1.getReturnType());
-                final AsmMethod asmMethod1 = new AsmMethod(method1.getAccessFlags(), method1.getName(), sig1);
-
-                myMethods.put(asmMethod, Arrays.asList(asmMethod, asmMethod1));
-            }
-        }
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        final MethodToNativeVisitor methodToNativeVisitor = new MethodToNativeVisitor(Opcodes.ASM9, cw, myMethods);
-
-        final InjectStaticBlockVisitor visitor = new InjectStaticBlockVisitor(Opcodes.ASM9, methodToNativeVisitor,
-                clsName,
-                methodName,
-                classIdx);
-        final ClassReader cr = new ClassReader(inClass);
-        cr.accept(visitor, 0);
-        return cw.toByteArray();
-    }
-
-    @Contract(pure = true)
-    private static @NotNull List<String> getAbis() throws IOException {
-        return Arrays.asList(
-                "armeabi-v7a",
-                "arm64-v8a",
-                "x86",
-                "x86_64");
     }
 
     private @NotNull File extractClassJar() throws IOException {
@@ -248,19 +263,6 @@ public class AarProtect {
         });
         return convertedDexJar;
     }
-
-    private static @NotNull File getClassesDex(File dexJar, @NotNull File zipExtractDir) throws IOException {
-        if (!zipExtractDir.exists()) zipExtractDir.mkdirs();
-        final File file = new File(zipExtractDir, "classes.dex");
-
-        byte[] jarBytes = ZipHelper.getZipFileContent(dexJar, "classes.dex");
-        if (jarBytes == null) {
-            throw new IllegalStateException("No classes.dex");
-        }
-        FileHelper.copyStream(FileHelper.bytesToInputStream(jarBytes), new FileOutputStream(file));
-        return file;
-    }
-
 
     public static class Builder {
         private final AarFolders aarFolders;

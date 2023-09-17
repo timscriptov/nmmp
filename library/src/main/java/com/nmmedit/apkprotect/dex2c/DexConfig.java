@@ -66,13 +66,12 @@ public class DexConfig {
         nativeMethodOffsets = codeGenerator.getNativeMethodOffsets();
     }
 
+    public HashMultimap<String, List<? extends Method>> getShellMethods() {
+        return shellMethods;
+    }
 
     public void setShellMethods(HashMultimap<String, List<? extends Method>> shellMethods) {
         this.shellMethods = shellMethods;
-    }
-
-    public HashMultimap<String, List<? extends Method>> getShellMethods() {
-        return shellMethods;
     }
 
     /**

@@ -5,9 +5,9 @@ import com.nmmedit.apkprotect.ApkFolders;
 import java.io.File;
 
 public class AarFolders {
+    public final ApkFolders apkFolders;
     private final File aar;
     private final File out;
-    public final ApkFolders apkFolders;
 
     public AarFolders(File aar, File out) {
         this.aar = aar;

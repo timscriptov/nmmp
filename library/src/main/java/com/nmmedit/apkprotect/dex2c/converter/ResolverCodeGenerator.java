@@ -27,6 +27,15 @@ public class ResolverCodeGenerator {
         references = new References(dexFile, analyzer);
     }
 
+    static @NotNull String stringEsc(String str) throws UTFDataFormatException {
+        byte[] bytes = ModifiedUtf8.encode(str);
+        StringBuilder sb = new StringBuilder(4 * bytes.length);
+        for (byte b : bytes) {
+            sb.append(String.format("\\x%02x", b & 0xFF));
+        }
+        return sb.toString();
+    }
+
     public References getReferences() {
         return references;
     }
@@ -360,7 +369,6 @@ public class ResolverCodeGenerator {
         writer.write(String.format("static vmField gFields[%d];\n", fieldPool.size()));
     }
 
-
     private void generateStringPool(@NotNull Writer writer) throws IOException {
         writer.write("static const u1 gBaseStrPtr[]={\n");
 
@@ -401,15 +409,6 @@ public class ResolverCodeGenerator {
         writer.write("//ends string ids\n\n");
 
         writer.flush();
-    }
-
-    static @NotNull String stringEsc(String str) throws UTFDataFormatException {
-        byte[] bytes = ModifiedUtf8.encode(str);
-        StringBuilder sb = new StringBuilder(4 * bytes.length);
-        for (byte b : bytes) {
-            sb.append(String.format("\\x%02x", b & 0xFF));
-        }
-        return sb.toString();
     }
 
     private void generateTypePool(@NotNull Writer writer) throws IOException {
