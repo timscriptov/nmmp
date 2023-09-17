@@ -42,7 +42,7 @@ Prefs.setVmName("nmmvm")
 Prefs.setNmmpName("nmmp")
 ```
 
-## Convert byte-code to native:
+## Protect APK:
 ```kotlin
 val input = File("input.apk")
 val output = File("output.apk")
@@ -53,7 +53,6 @@ val simpleRules = SimpleRules().apply {
 val filterConfig = SimpleConvertConfig(BasicKeepConfig(), simpleRules)
 ApkProtect.Builder(ApkFolders(input, output)).apply {
     setInstructionRewriter(RandomInstructionRewriter())
-    setApkVerifyCodeGenerator(null)
     setFilter(filterConfig)
     setLogger(null)
     setClassAnalyzer(ClassAnalyzer())
