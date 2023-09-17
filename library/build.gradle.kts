@@ -46,7 +46,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.mcal"
             artifactId = "nmmp"
-            version = "1.2.8"
+            version = "1.3.0"
 
             afterEvaluate {
                 from(components["java"])

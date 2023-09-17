@@ -58,12 +58,12 @@ public class AabProtect {
             final String numb = file.getName().replace("classes", "").replace(".dex", "");
             final String numb2 = t1.getName().replace("classes", "").replace(".dex", "");
             int n, n2;
-            if ("".equals(numb)) {
+            if (numb.isEmpty()) {
                 n = 0;
             } else {
                 n = Integer.parseInt(numb);
             }
-            if ("".equals(numb2)) {
+            if (numb2.isEmpty()) {
                 n2 = 0;
             } else {
                 n2 = Integer.parseInt(numb2);
@@ -76,26 +76,41 @@ public class AabProtect {
     //根据aab文件得到abi，如果没有本地库则返回x86及arm所有abi
     private static @NotNull List<String> getAbis(File aab) throws IOException {
         final Pattern pattern = Pattern.compile("base/lib/(.*)/.*\\.so");
-        final Enumeration<? extends ZipEntry> entries;
-        try (ZipFile zipFile = new ZipFile(aab)) {
-            entries = zipFile.getEntries();
-
-        }
+        ;
         Set<String> abis = new HashSet<>();
-        while (entries.hasMoreElements()) {
-            final ZipEntry entry = entries.nextElement();
-            final Matcher matcher = pattern.matcher(entry.getName());
-            if (matcher.matches()) {
-                abis.add(matcher.group(1));
+        try (ZipFile zipFile = new ZipFile(aab)) {
+            final Enumeration<? extends ZipEntry> entries = zipFile.getEntries();
+            while (entries.hasMoreElements()) {
+                final ZipEntry entry = entries.nextElement();
+                final Matcher matcher = pattern.matcher(entry.getName());
+                if (matcher.matches()) {
+                    abis.add(matcher.group(1));
+                }
             }
-        }
-        //不支持armeabi，可能还要删除mips相关
-        abis.remove("armeabi");
-        abis.remove("mips");
-        abis.remove("mips64");
+            //不支持armeabi，可能还要删除mips相关
+            abis.remove("armeabi");
+            abis.remove("mips");
+            abis.remove("mips64");
 
-        if (abis.isEmpty()) {
-            return Arrays.asList("armeabi-v7a", "arm64-v8a", "x86", "x86_64");
+            if (abis.isEmpty()) {
+                //默认只生成armeabi-v7a
+                ArrayList<String> abi = new ArrayList<>();
+                if (Prefs.isArm()) {
+                    abi.add("armeabi-v7a");
+                }
+                if (Prefs.isArm64()) {
+                    abi.add("arm64-v8a");
+                }
+
+                if (Prefs.isX86()) {
+                    abi.add("x86");
+                }
+
+                if (Prefs.isX64()) {
+                    abi.add("x86_64");
+                }
+                return abi;
+            }
         }
         return new ArrayList<>(abis);
     }

@@ -76,6 +76,8 @@ public class ApkProtect {
             }
             //不支持armeabi，可能还要删除mips相关
             abis.remove("armeabi");
+            abis.remove("mips");
+            abis.remove("mips64");
             if (abis.isEmpty()) {
                 //默认只生成armeabi-v7a
                 ArrayList<String> abi = new ArrayList<>();

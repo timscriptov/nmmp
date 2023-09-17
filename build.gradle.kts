@@ -38,7 +38,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "nmmp"
-            packageVersion = "1.2.8"
+            packageVersion = "1.3.0"
             description = "Android APK Protector"
             copyright = "© 2023 timscriptov."
             vendor = "timscriptov"
