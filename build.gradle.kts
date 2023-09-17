@@ -43,6 +43,12 @@ compose.desktop {
             copyright = "© 2023 timscriptov."
             vendor = "timscriptov"
         }
+        buildTypes.release.proguard {
+            version.set("7.3.2")
+            configurationFiles.from("desktop-rules.pro")
+            isEnabled.set(true)
+            obfuscate.set(true)
+        }
         jvmArgs("-Djdk.util.zip.disableZip64ExtraFieldValidation=true")
     }
 }
