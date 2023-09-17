@@ -2,7 +2,6 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -69,7 +68,7 @@ fun App() {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
                                 value = apkPath,
-                                label = { Text("Enter APK path") },
+                                label = { Text("Enter APK path*") },
                                 onValueChange = {
                                     apkPath = it.replace("\"", "")
                                 }
@@ -187,7 +186,7 @@ fun App() {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
                                 value = rulesPath,
-                                label = { Text("Enter rules path") },
+                                label = { Text("Enter rules path*") },
                                 onValueChange = {
                                     rulesPath = it.replace("\"", "")
                                 }
@@ -213,7 +212,7 @@ fun App() {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
                                 value = ndkPath,
-                                label = { Text("Enter Android NDK path") },
+                                label = { Text("Enter Android NDK path*") },
                                 onValueChange = {
                                     ndkPath = it.replace("\"", "").also { path ->
                                         Prefs.setNdkPath(path)
@@ -223,7 +222,7 @@ fun App() {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
                                 value = cmakePath,
-                                label = { Text("Enter CMake path") },
+                                label = { Text("Enter CMake path*") },
                                 onValueChange = {
                                     cmakePath = it.replace("\"", "").also { path ->
                                         Prefs.setCmakePath(path)
@@ -240,7 +239,7 @@ fun App() {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
                                 value = vmName,
-                                label = { Text("Enter vm name path") },
+                                label = { Text("Enter vm name path*") },
                                 onValueChange = {
                                     vmName = it.also { name ->
                                         Prefs.setVmName(name)
@@ -250,7 +249,7 @@ fun App() {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
                                 value = nmmpName,
-                                label = { Text("Enter nmmp name path") },
+                                label = { Text("Enter nmmp name path*") },
                                 onValueChange = {
                                     nmmpName = it.also { name ->
                                         Prefs.setNmmpName(name)
@@ -260,7 +259,7 @@ fun App() {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
                                 value = className,
-                                label = { Text("Enter class name path") },
+                                label = { Text("Enter class name path*") },
                                 onValueChange = {
                                     className = it.also { name ->
                                         Prefs.setRegisterNativesClassName(name)
