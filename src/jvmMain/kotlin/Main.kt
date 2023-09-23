@@ -2,6 +2,7 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -320,11 +321,11 @@ fun App() {
                     Card(
                         modifier = Modifier.fillMaxSize()
                     ) {
-//                        val listState = rememberLazyListState()
+                        val listState = rememberLazyListState()
                         LazyColumn(
                             modifier = Modifier
                                 .padding(8.dp),
-//                            state = listState
+                            state = listState
                         ) {
                             if (logs.isNotEmpty()) {
                                 items(logs) { log ->
@@ -336,11 +337,11 @@ fun App() {
                                         Text(log)
                                     }
                                     Divider(modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
-//                                    if (logs.size > 1) {
-//                                        LaunchedEffect(listState) {
-//                                            listState.scrollToItem(logs.size - 1)
-//                                        }
-//                                    }
+                                    if (!isEnabled && logs.size > 1) {
+                                        LaunchedEffect(listState) {
+                                            listState.scrollToItem(logs.size - 1)
+                                        }
+                                    }
                                 }
                             }
                         }
