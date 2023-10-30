@@ -20,10 +20,8 @@ sourceSets {
     }
 }
 
-val protobufVersion = "3.19.6"
-
 dependencies {
-    implementation("com.github.TimScriptov:apkparser:1.2.5")
+    implementation("com.github.TimScriptov:apkparser:1.2.7")
     implementation("com.github.TimScriptov:preferences:1.0.2")
     implementation("com.android.tools.smali:smali-dexlib2:3.0.3")
     implementation("org.jetbrains:annotations:24.0.1")
@@ -32,12 +30,12 @@ dependencies {
     implementation("org.ow2.asm:asm:9.5")
     implementation("com.android.tools:r8:8.1.56")
     implementation("com.google.protobuf:protobuf-java:3.22.2")
-    implementation("com.google.protobuf:protobuf-java:$protobufVersion")
+    implementation("com.google.protobuf:protobuf-java:3.19.6")
 }
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:$protobufVersion"
+        artifact = "com.google.protobuf:protoc:3.19.6"
     }
 }
 
@@ -46,7 +44,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.mcal"
             artifactId = "nmmp"
-            version = "1.3.0"
+            version = "1.3.1"
 
             afterEvaluate {
                 from(components["java"])
