@@ -76,7 +76,7 @@ public class CmakeUtils {
         lines = lines.replaceAll(String.format(libNameFormat, "nmmp"), String.format(libNameFormat, libNmmpName));
 
         libNameFormat = "set\\(LIBNMMVM_NAME \"%s\" CACHE INTERNAL \"lib %s name\"\\)";
-        lines = lines.replace(String.format(libNameFormat, "nmmvm", "nmmvm"), String.format(libNameFormat, libVmName, libVmName));
+        lines = lines.replaceAll(String.format(libNameFormat, "nmmvm", "nmmvm"), String.format(libNameFormat, libVmName, libVmName));
 
         FileHelper.writeToFile(cmakeTemp, lines);
     }
