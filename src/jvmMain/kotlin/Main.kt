@@ -20,9 +20,7 @@ import com.nmmedit.apkprotect.data.Storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import task.AabVmpTask
-import task.AarVmpTask
-import task.ApkVmpTask
+import task.*
 import java.awt.Dimension
 import java.io.File
 import java.io.IOException
@@ -148,6 +146,11 @@ fun App() {
     var nmmpName by remember { mutableStateOf(Prefs.getNmmpName()) }
     var className by remember { mutableStateOf(Prefs.getRegisterNativesClassName()) }
 
+    var keystorePath by remember { mutableStateOf("") }
+    var keystorePassword by remember { mutableStateOf("") }
+    var keystoreAlias by remember { mutableStateOf("") }
+    var keystoreAliasPassword by remember { mutableStateOf("") }
+
     val logs = remember { mutableStateListOf<String>() }
 
     MaterialTheme {
@@ -192,6 +195,7 @@ fun App() {
                                             logs.add("W: Rules file not found")
                                         } else {
                                             logs.add("I: Starting...")
+
                                             val output: File
                                             try {
                                                 if (inputFilePath.endsWith(".apk")) {
@@ -201,8 +205,22 @@ fun App() {
                                                         output = output.path,
                                                         rules = rulesPath,
                                                         mapping = mappingPath,
-                                                        logs = logs
+                                                        logs = logs,
                                                     ).start()
+
+                                                    logs.add("I: Start sign apk.")
+
+                                                    ApkSignTask(
+                                                        output = output.path,
+                                                        keystorePath = keystorePath,
+                                                        keystorePassword = keystorePassword,
+                                                        keystoreAlias = keystoreAlias,
+                                                        keystoreAliasPassword = keystoreAliasPassword,
+                                                        logs = logs,
+                                                    ).start()
+
+                                                    logs.add("I: sign finished.")
+
                                                     logs.add("I: APK saved:\n${output.path}")
                                                 } else if (inputFilePath.endsWith(".aab")) {
                                                     output = File(inputFilePath.replace(".aab", "_vmp.aab"))
@@ -211,8 +229,22 @@ fun App() {
                                                         output = output.path,
                                                         rules = rulesPath,
                                                         mapping = mappingPath,
-                                                        logs = logs
+                                                        logs = logs,
                                                     ).start()
+
+                                                    logs.add("I: Start sign aab.")
+
+                                                    AabSignTask(
+                                                        output = output.path,
+                                                        keystorePath = keystorePath,
+                                                        keystorePassword = keystorePassword,
+                                                        keystoreAlias = keystoreAlias,
+                                                        keystoreAliasPassword = keystoreAliasPassword,
+                                                        logs = logs,
+                                                    ).start()
+
+                                                    logs.add("I: sign finished.")
+
                                                     logs.add("I: AAB saved:\n${output.path}")
                                                 } else if (inputFilePath.endsWith(".aar")) {
                                                     output = File(inputFilePath.replace(".aar", "_vmp.aar"))
@@ -397,6 +429,55 @@ fun App() {
                                 label = { Text("Enter class name path*") },
                                 onValueChange = {
                                     className = it.also { name ->
+                                        Prefs.setRegisterNativesClassName(name)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    Card(
+                        modifier = Modifier.padding(top = 8.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                        ) {
+                            FilePathInputField(
+                                modifier = Modifier.fillMaxWidth(),
+                                inputHint = "Enter keystore path*",
+                                selectionDescription = "Select skystore file path*",
+                                inputValue = keystorePath,
+                                onValueChange = {
+                                    keystorePath = it.replace("\"", "")
+                                }
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = keystorePassword,
+                                label = { Text("Enter keystore password*") },
+                                onValueChange = {
+                                    keystorePassword = it.also { name ->
+                                        Prefs.setRegisterNativesClassName(name)
+                                    }
+                                }
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = keystoreAlias,
+                                label = { Text("Enter keystore alias*") },
+                                onValueChange = {
+                                    keystoreAlias = it.also { name ->
+                                        Prefs.setRegisterNativesClassName(name)
+                                    }
+                                }
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = keystoreAliasPassword,
+                                label = { Text("Enter keystore alias password*") },
+                                onValueChange = {
+                                    keystoreAliasPassword = it.also { name ->
                                         Prefs.setRegisterNativesClassName(name)
                                     }
                                 }
