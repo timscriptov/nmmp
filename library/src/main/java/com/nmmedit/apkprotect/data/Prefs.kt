@@ -65,6 +65,16 @@ object Prefs {
     }
 
     @JvmStatic
+    fun setCxxFlags(flags: String) {
+        Preferences.putString("cxx_flags", flags)
+    }
+
+    @JvmStatic
+    fun getCxxFlags(): String {
+        return Preferences.getString("cxx_flags", "")
+    }
+
+    @JvmStatic
     fun getRegisterNativesClassName(): String {
         return Preferences.getString(
             "register_natives_class_name",

@@ -145,6 +145,7 @@ fun App() {
     var vmName by remember { mutableStateOf(Prefs.getVmName()) }
     var nmmpName by remember { mutableStateOf(Prefs.getNmmpName()) }
     var className by remember { mutableStateOf(Prefs.getRegisterNativesClassName()) }
+    var cxxFlags by remember { mutableStateOf(Prefs.getCxxFlags()) }
 
     var keystorePath by remember { mutableStateOf("") }
     var keystorePassword by remember { mutableStateOf("") }
@@ -430,6 +431,16 @@ fun App() {
                                 onValueChange = {
                                     className = it.also { name ->
                                         Prefs.setRegisterNativesClassName(name)
+                                    }
+                                }
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = cxxFlags,
+                                label = { Text("Enter cxx flags") },
+                                onValueChange = {
+                                    cxxFlags = it.also { flags ->
+                                        Prefs.setCxxFlags(flags)
                                     }
                                 }
                             )
