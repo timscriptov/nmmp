@@ -20,12 +20,108 @@ import com.nmmedit.apkprotect.data.Storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import task.AabVmpTask
-import task.AarVmpTask
-import task.ApkVmpTask
+import task.*
 import java.awt.Dimension
 import java.io.File
 import java.io.IOException
+import javax.swing.JFileChooser
+
+fun chooseFile(description: String, baseDirectory: String): String? {
+    val fileChooser = JFileChooser(baseDirectory).apply {
+        fileSelectionMode = JFileChooser.FILES_ONLY
+        dialogTitle = description
+        approveButtonText = "Select"
+        approveButtonToolTipText = description
+    }
+    fileChooser.showOpenDialog(null)
+    val result = fileChooser.selectedFile
+    return if (result != null && result.exists()) {
+        result.absolutePath.toString()
+    } else {
+        null
+    }
+}
+
+fun chooseDirectory(description: String, baseDirectory: String): String? {
+    val fileChooser = JFileChooser(baseDirectory).apply {
+        fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+        dialogTitle = description
+        approveButtonText = "Select"
+        approveButtonToolTipText = description
+    }
+    fileChooser.showOpenDialog(null)
+    val result = fileChooser.selectedFile
+    return if (result != null && result.exists()) {
+        result.absolutePath.toString()
+    } else {
+        null
+    }
+}
+
+fun getParentDirectory(path: String): String {
+    val file = File(path)
+    return if (file.exists()) {
+        if (file.isDirectory) {
+            file.absolutePath
+        } else {
+            file.parent
+        }
+    } else {
+        "/"
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FilePathInputField(
+    modifier: Modifier,
+    inputHint: String,
+    selectionDescription: String,
+    inputValue: String,
+    onValueChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        modifier = modifier,
+        value = inputValue,
+        label = { Text(inputHint) },
+        onValueChange = onValueChange,
+        trailingIcon = {
+            Button(
+                modifier = Modifier.padding(5.dp),
+                onClick = {
+                    chooseFile(selectionDescription, getParentDirectory(inputValue))?.let { onValueChange(it) }
+                }) {
+                Text("select")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DirectoryPathInputField(
+    modifier: Modifier,
+    hintText: String,
+    selectText: String,
+    inputValue: String,
+    onValueChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        modifier = modifier,
+        value = inputValue,
+        label = { Text(hintText) },
+        onValueChange = onValueChange,
+        trailingIcon = {
+            Button(
+                modifier = Modifier.padding(5.dp),
+                onClick = {
+                    chooseDirectory(selectText, getParentDirectory(inputValue))?.let { onValueChange(it) }
+                }) {
+                Text("select")
+            }
+        }
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +145,12 @@ fun App() {
     var vmName by remember { mutableStateOf(Prefs.getVmName()) }
     var nmmpName by remember { mutableStateOf(Prefs.getNmmpName()) }
     var className by remember { mutableStateOf(Prefs.getRegisterNativesClassName()) }
+    var cxxFlags by remember { mutableStateOf(Prefs.getCxxFlags()) }
+
+    var keystorePath by remember { mutableStateOf("") }
+    var keystorePassword by remember { mutableStateOf("") }
+    var keystoreAlias by remember { mutableStateOf("") }
+    var keystoreAliasPassword by remember { mutableStateOf("") }
 
     val logs = remember { mutableStateListOf<String>() }
 
@@ -69,10 +171,11 @@ fun App() {
                             modifier = Modifier
                                 .padding(8.dp)
                         ) {
-                            OutlinedTextField(
+                            FilePathInputField(
                                 modifier = Modifier.fillMaxWidth(),
-                                value = inputFilePath,
-                                label = { Text("Enter APK/AAR/AAB path*") },
+                                inputHint = "Enter APK/AAR/AAB path*",
+                                selectionDescription = "Select APK/AAR/AAB",
+                                inputValue = inputFilePath,
                                 onValueChange = {
                                     inputFilePath = it.replace("\"", "")
                                 }
@@ -93,6 +196,7 @@ fun App() {
                                             logs.add("W: Rules file not found")
                                         } else {
                                             logs.add("I: Starting...")
+
                                             val output: File
                                             try {
                                                 if (inputFilePath.endsWith(".apk")) {
@@ -102,8 +206,22 @@ fun App() {
                                                         output = output.path,
                                                         rules = rulesPath,
                                                         mapping = mappingPath,
-                                                        logs = logs
+                                                        logs = logs,
                                                     ).start()
+
+                                                    logs.add("I: Start sign apk.")
+
+                                                    ApkSignTask(
+                                                        output = output.path,
+                                                        keystorePath = keystorePath,
+                                                        keystorePassword = keystorePassword,
+                                                        keystoreAlias = keystoreAlias,
+                                                        keystoreAliasPassword = keystoreAliasPassword,
+                                                        logs = logs,
+                                                    ).start()
+
+                                                    logs.add("I: sign finished.")
+
                                                     logs.add("I: APK saved:\n${output.path}")
                                                 } else if (inputFilePath.endsWith(".aab")) {
                                                     output = File(inputFilePath.replace(".aab", "_vmp.aab"))
@@ -112,8 +230,22 @@ fun App() {
                                                         output = output.path,
                                                         rules = rulesPath,
                                                         mapping = mappingPath,
-                                                        logs = logs
+                                                        logs = logs,
                                                     ).start()
+
+                                                    logs.add("I: Start sign aab.")
+
+                                                    AabSignTask(
+                                                        output = output.path,
+                                                        keystorePath = keystorePath,
+                                                        keystorePassword = keystorePassword,
+                                                        keystoreAlias = keystoreAlias,
+                                                        keystoreAliasPassword = keystoreAliasPassword,
+                                                        logs = logs,
+                                                    ).start()
+
+                                                    logs.add("I: sign finished.")
+
                                                     logs.add("I: AAB saved:\n${output.path}")
                                                 } else if (inputFilePath.endsWith(".aar")) {
                                                     output = File(inputFilePath.replace(".aar", "_vmp.aar"))
@@ -214,46 +346,51 @@ fun App() {
                             modifier = Modifier
                                 .padding(8.dp)
                         ) {
-                            OutlinedTextField(
+                            FilePathInputField(
                                 modifier = Modifier.fillMaxWidth(),
-                                value = rulesPath,
-                                label = { Text("Enter rules path*") },
+                                inputHint = "Enter rules path*",
+                                selectionDescription = "Select rules file path",
+                                inputValue = rulesPath,
                                 onValueChange = {
                                     rulesPath = it.replace("\"", "")
                                 }
                             )
-                            OutlinedTextField(
+                            FilePathInputField(
                                 modifier = Modifier.fillMaxWidth(),
-                                value = mappingPath,
-                                label = { Text("Enter ProGuard mapping path") },
+                                inputHint = "Enter ProGuard mapping path",
+                                selectionDescription = "Select ProGuard mapping file path",
+                                inputValue = mappingPath,
                                 onValueChange = {
                                     mappingPath = it.replace("\"", "")
                                 }
                             )
-                            OutlinedTextField(
+                            DirectoryPathInputField(
                                 modifier = Modifier.fillMaxWidth(),
-                                value = sdkPath,
-                                label = { Text("Enter Android SDK path") },
+                                hintText = "Enter Android SDK path*",
+                                selectText = "Select Android SDK path",
+                                inputValue = sdkPath,
                                 onValueChange = {
                                     sdkPath = it.replace("\"", "").also { path ->
                                         Prefs.setSdkPath(path)
                                     }
                                 }
                             )
-                            OutlinedTextField(
+                            DirectoryPathInputField(
                                 modifier = Modifier.fillMaxWidth(),
-                                value = ndkPath,
-                                label = { Text("Enter Android NDK path*") },
+                                hintText = "Enter Android NDK path*",
+                                selectText = "Select Android NDK path",
+                                inputValue = ndkPath,
                                 onValueChange = {
                                     ndkPath = it.replace("\"", "").also { path ->
                                         Prefs.setNdkPath(path)
                                     }
                                 }
                             )
-                            OutlinedTextField(
+                            DirectoryPathInputField(
                                 modifier = Modifier.fillMaxWidth(),
-                                value = cmakePath,
-                                label = { Text("Enter CMake path*") },
+                                hintText = "Enter CMake path*",
+                                selectText = "Select CMake path",
+                                inputValue = cmakePath,
                                 onValueChange = {
                                     cmakePath = it.replace("\"", "").also { path ->
                                         Prefs.setCmakePath(path)
@@ -293,6 +430,65 @@ fun App() {
                                 label = { Text("Enter class name path*") },
                                 onValueChange = {
                                     className = it.also { name ->
+                                        Prefs.setRegisterNativesClassName(name)
+                                    }
+                                }
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = cxxFlags,
+                                label = { Text("Enter cxx flags") },
+                                onValueChange = {
+                                    cxxFlags = it.also { flags ->
+                                        Prefs.setCxxFlags(flags)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    Card(
+                        modifier = Modifier.padding(top = 8.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                        ) {
+                            FilePathInputField(
+                                modifier = Modifier.fillMaxWidth(),
+                                inputHint = "Enter keystore path*",
+                                selectionDescription = "Select skystore file path*",
+                                inputValue = keystorePath,
+                                onValueChange = {
+                                    keystorePath = it.replace("\"", "")
+                                }
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = keystorePassword,
+                                label = { Text("Enter keystore password*") },
+                                onValueChange = {
+                                    keystorePassword = it.also { name ->
+                                        Prefs.setRegisterNativesClassName(name)
+                                    }
+                                }
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = keystoreAlias,
+                                label = { Text("Enter keystore alias*") },
+                                onValueChange = {
+                                    keystoreAlias = it.also { name ->
+                                        Prefs.setRegisterNativesClassName(name)
+                                    }
+                                }
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = keystoreAliasPassword,
+                                label = { Text("Enter keystore alias password*") },
+                                onValueChange = {
+                                    keystoreAliasPassword = it.also { name ->
                                         Prefs.setRegisterNativesClassName(name)
                                     }
                                 }

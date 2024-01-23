@@ -64,7 +64,7 @@ public class CmakeUtils {
         }
     }
 
-    public static void writeCmakeFile(File cmakeTemp, String libNmmpName, String libVmName) throws IOException {
+    public static void writeCmakeFile(File cmakeTemp, String libNmmpName, String libVmName, String cxxFlags) throws IOException {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(cmakeTemp), StandardCharsets.UTF_8));
 
@@ -76,7 +76,10 @@ public class CmakeUtils {
         lines = lines.replaceAll(String.format(libNameFormat, "nmmp"), String.format(libNameFormat, libNmmpName));
 
         libNameFormat = "set\\(LIBNMMVM_NAME \"%s\" CACHE INTERNAL \"lib %s name\"\\)";
-        lines = lines.replace(String.format(libNameFormat, "nmmvm", "nmmvm"), String.format(libNameFormat, libVmName, libVmName));
+        lines = lines.replaceAll(String.format(libNameFormat, "nmmvm", "nmmvm"), String.format(libNameFormat, libVmName, libVmName));
+
+        //额外FLAGS
+        lines = lines.replaceAll("-fvisibility=hidden", "-fvisibility=hidden " + cxxFlags);
 
         FileHelper.writeToFile(cmakeTemp, lines);
     }
@@ -104,7 +107,7 @@ public class CmakeUtils {
                 writeOpcodeHeaderFile(source, instructionRewriter);
             } else if (source.getName().equals("CMakeLists.txt")) {
                 //处理cmake里配置的本地库名
-                writeCmakeFile(source, Prefs.getNmmpName(), Prefs.getVmName());
+                writeCmakeFile(source, Prefs.getNmmpName(), Prefs.getVmName(), Prefs.getCxxFlags());
             } else if (source.getName().endsWith("vm.h")) {
                 writeRandomResolver(source);
             } else if (source.getName().endsWith("JNIWrapper.h")) {
