@@ -50,8 +50,8 @@ object Prefs {
     }
 
     @JvmStatic
-    fun setVmName(path: String) {
-        Preferences.putString("vm_name", path)
+    fun setVmName(name: String) {
+        Preferences.putString("vm_name", name)
     }
 
     @JvmStatic
@@ -60,8 +60,8 @@ object Prefs {
     }
 
     @JvmStatic
-    fun setNmmpName(path: String) {
-        Preferences.putString("nmmp_name", path)
+    fun setNmmpName(name: String) {
+        Preferences.putString("nmmp_name", name)
     }
 
     @JvmStatic

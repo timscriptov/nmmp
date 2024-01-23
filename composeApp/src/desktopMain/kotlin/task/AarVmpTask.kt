@@ -40,19 +40,19 @@ class AarVmpTask(
     }
 
     override fun info(msg: String?) {
-        if(!msg.isNullOrEmpty()) {
+        if (!msg.isNullOrEmpty()) {
             logs.add("I: $msg")
         }
     }
 
     override fun error(msg: String?) {
-        if(!msg.isNullOrEmpty()) {
+        if (!msg.isNullOrEmpty()) {
             logs.add("E: $msg")
         }
     }
 
     override fun warning(msg: String?) {
-        if(!msg.isNullOrEmpty()) {
+        if (!msg.isNullOrEmpty()) {
             logs.add("W: $msg")
         }
     }

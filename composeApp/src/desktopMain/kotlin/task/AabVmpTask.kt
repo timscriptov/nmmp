@@ -1,7 +1,7 @@
 package task
 
-import com.nmmedit.apkprotect.ApkFolders
-import com.nmmedit.apkprotect.ApkProtect
+import com.nmmedit.apkprotect.aab.AabFolders
+import com.nmmedit.apkprotect.aab.AabProtect
 import com.nmmedit.apkprotect.deobfus.MappingReader
 import com.nmmedit.apkprotect.dex2c.converter.ClassAnalyzer
 import com.nmmedit.apkprotect.dex2c.converter.instructionrewriter.RandomInstructionRewriter
@@ -15,7 +15,7 @@ import java.io.FileInputStream
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 
-class ApkVmpTask(
+class AabVmpTask(
     private val input: String,
     private val output: String,
     private val rules: String,
@@ -31,28 +31,28 @@ class ApkVmpTask(
         } else {
             SimpleConvertConfig(BasicKeepConfig(), simpleRules)
         }
-        ApkProtect.Builder(ApkFolders(File(input), File(output))).apply {
+        AabProtect.Builder(AabFolders(File(input), File(output))).apply {
             setInstructionRewriter(RandomInstructionRewriter())
             setFilter(filterConfig)
-            setLogger(this@ApkVmpTask)
+            setLogger(this@AabVmpTask)
             setClassAnalyzer(ClassAnalyzer())
         }.build().run()
     }
 
     override fun info(msg: String?) {
-        if(!msg.isNullOrEmpty()) {
+        if (!msg.isNullOrEmpty()) {
             logs.add("I: $msg")
         }
     }
 
     override fun error(msg: String?) {
-        if(!msg.isNullOrEmpty()) {
+        if (!msg.isNullOrEmpty()) {
             logs.add("E: $msg")
         }
     }
 
     override fun warning(msg: String?) {
-        if(!msg.isNullOrEmpty()) {
+        if (!msg.isNullOrEmpty()) {
             logs.add("W: $msg")
         }
     }
