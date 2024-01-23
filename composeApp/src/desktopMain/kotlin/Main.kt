@@ -36,27 +36,6 @@ fun App() {
 
     var inputFilePath by remember { mutableStateOf("") }
 
-    var arm by remember { mutableStateOf(Prefs.isArm()) }
-    var arm64 by remember { mutableStateOf(Prefs.isArm64()) }
-    var x86 by remember { mutableStateOf(Prefs.isX86()) }
-    var x64 by remember { mutableStateOf(Prefs.isX64()) }
-
-    var rulesPath by remember { mutableStateOf("") }
-    var mappingPath by remember { mutableStateOf("") }
-    var sdkPath by remember { mutableStateOf(Prefs.getSdkPath()) }
-    var ndkPath by remember { mutableStateOf(Prefs.getNdkPath()) }
-    var cmakePath by remember { mutableStateOf(Prefs.getCmakePath()) }
-
-    var vmName by remember { mutableStateOf(Prefs.getVmName()) }
-    var nmmpName by remember { mutableStateOf(Prefs.getNmmpName()) }
-    var className by remember { mutableStateOf(Prefs.getRegisterNativesClassName()) }
-    var cxxFlags by remember { mutableStateOf(Prefs.getCxxFlags()) }
-
-    var keystorePath by remember { mutableStateOf("") }
-    var keystorePassword by remember { mutableStateOf("") }
-    var keystoreAlias by remember { mutableStateOf("") }
-    var keystoreAliasPassword by remember { mutableStateOf("") }
-
     val logs = remember { mutableStateListOf<String>() }
 
     MaterialTheme {
@@ -91,236 +70,14 @@ fun App() {
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     if (!inputFilePath.endsWith(".aar")) {
-                        Card(
-                            shape = ShapeDefaults.Small
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                            ) {
-                                Row {
-                                    Text(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxWidth(),
-                                        text = "armeabi-v7a"
-                                    )
-                                    Switch(
-                                        checked = arm,
-                                        onCheckedChange = {
-                                            arm = it
-                                            Prefs.setArm(it)
-                                        }
-                                    )
-                                }
-                                Row {
-                                    Text(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxWidth(),
-                                        text = "arm64-v8a"
-                                    )
-                                    Switch(
-                                        checked = arm64,
-                                        onCheckedChange = {
-                                            arm64 = it
-                                            Prefs.setArm64(it)
-                                        }
-                                    )
-                                }
-                                Row {
-                                    Text(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxWidth(),
-                                        text = "x86"
-                                    )
-                                    Switch(
-                                        checked = x86,
-                                        onCheckedChange = {
-                                            x86 = it
-                                            Prefs.setX86(it)
-                                        }
-                                    )
-                                }
-                                Row {
-                                    Text(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxWidth(),
-                                        text = "x86_64"
-                                    )
-                                    Switch(
-                                        checked = x64,
-                                        onCheckedChange = {
-                                            x64 = it
-                                            Prefs.setX64(it)
-                                        }
-                                    )
-                                }
-                            }
-                        }
+                        AbiCard()
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Card(
-                        shape = ShapeDefaults.Small
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                        ) {
-                            FilePathInputField(
-                                modifier = Modifier.fillMaxWidth(),
-                                inputHint = "Enter rules path*",
-                                selectionDescription = "Select rules file path",
-                                inputValue = rulesPath,
-                                onValueChange = {
-                                    rulesPath = it.replace("\"", "")
-                                }
-                            )
-                            FilePathInputField(
-                                modifier = Modifier.fillMaxWidth(),
-                                inputHint = "Enter ProGuard mapping path",
-                                selectionDescription = "Select ProGuard mapping file path",
-                                inputValue = mappingPath,
-                                onValueChange = {
-                                    mappingPath = it.replace("\"", "")
-                                }
-                            )
-                            DirectoryPathInputField(
-                                modifier = Modifier.fillMaxWidth(),
-                                hintText = "Enter Android SDK path*",
-                                selectText = "Select Android SDK path",
-                                inputValue = sdkPath,
-                                onValueChange = {
-                                    sdkPath = it.replace("\"", "").also { path ->
-                                        Prefs.setSdkPath(path)
-                                    }
-                                }
-                            )
-                            DirectoryPathInputField(
-                                modifier = Modifier.fillMaxWidth(),
-                                hintText = "Enter Android NDK path*",
-                                selectText = "Select Android NDK path",
-                                inputValue = ndkPath,
-                                onValueChange = {
-                                    ndkPath = it.replace("\"", "").also { path ->
-                                        Prefs.setNdkPath(path)
-                                    }
-                                }
-                            )
-                            DirectoryPathInputField(
-                                modifier = Modifier.fillMaxWidth(),
-                                hintText = "Enter CMake path*",
-                                selectText = "Select CMake path",
-                                inputValue = cmakePath,
-                                onValueChange = {
-                                    cmakePath = it.replace("\"", "").also { path ->
-                                        Prefs.setCmakePath(path)
-                                    }
-                                }
-                            )
-                        }
-                    }
+                    SdkCard()
                     Spacer(modifier = Modifier.height(16.dp))
-                    Card(
-                        shape = ShapeDefaults.Small
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                        ) {
-                            OutlinedTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                value = vmName,
-                                label = { Text("Enter vm name path*") },
-                                onValueChange = {
-                                    vmName = it.also { name ->
-                                        Prefs.setVmName(name)
-                                    }
-                                }
-                            )
-                            OutlinedTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                value = nmmpName,
-                                label = { Text("Enter nmmp name path*") },
-                                onValueChange = {
-                                    nmmpName = it.also { name ->
-                                        Prefs.setNmmpName(name)
-                                    }
-                                }
-                            )
-                            OutlinedTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                value = className,
-                                label = { Text("Enter class name path*") },
-                                onValueChange = {
-                                    className = it.also { name ->
-                                        Prefs.setRegisterNativesClassName(name)
-                                    }
-                                }
-                            )
-                            OutlinedTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                value = cxxFlags,
-                                label = { Text("Enter cxx flags") },
-                                onValueChange = {
-                                    cxxFlags = it.also { flags ->
-                                        Prefs.setCxxFlags(flags)
-                                    }
-                                }
-                            )
-                        }
-                    }
+                    OtherCard()
                     Spacer(modifier = Modifier.height(16.dp))
-                    Card(
-                        shape = ShapeDefaults.Small
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                        ) {
-                            FilePathInputField(
-                                modifier = Modifier.fillMaxWidth(),
-                                inputHint = "Enter keystore path*",
-                                selectionDescription = "Select skystore file path*",
-                                inputValue = keystorePath,
-                                onValueChange = {
-                                    keystorePath = it.replace("\"", "")
-                                }
-                            )
-                            OutlinedTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                value = keystorePassword,
-                                label = { Text("Enter keystore password*") },
-                                onValueChange = {
-                                    keystorePassword = it.also { name ->
-                                        Prefs.setRegisterNativesClassName(name)
-                                    }
-                                }
-                            )
-                            OutlinedTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                value = keystoreAlias,
-                                label = { Text("Enter keystore alias*") },
-                                onValueChange = {
-                                    keystoreAlias = it.also { name ->
-                                        Prefs.setRegisterNativesClassName(name)
-                                    }
-                                }
-                            )
-                            OutlinedTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                value = keystoreAliasPassword,
-                                label = { Text("Enter keystore alias password*") },
-                                onValueChange = {
-                                    keystoreAliasPassword = it.also { name ->
-                                        Prefs.setRegisterNativesClassName(name)
-                                    }
-                                }
-                            )
-                        }
-                    }
+                    KeystoreCard()
                     Spacer(modifier = Modifier.height(16.dp))
                     Card(
                         shape = ShapeDefaults.Small
@@ -380,6 +137,8 @@ fun App() {
                                 enabled = isEnabled,
                                 onClick = {
                                     CoroutineScope(Dispatchers.IO).launch {
+                                        val rulesPath = Prefs.rulesPath()
+                                        val mappingPath = Prefs.mappingPath()
                                         isEnabled = false
                                         if (inputFilePath.isEmpty()) {
                                             logs.add("W: Enter APK/AAB/AAR path")
@@ -408,10 +167,10 @@ fun App() {
 
                                                     ApkSignTask(
                                                         output = output.path,
-                                                        keystorePath = keystorePath,
-                                                        keystorePassword = keystorePassword,
-                                                        keystoreAlias = keystoreAlias,
-                                                        keystoreAliasPassword = keystoreAliasPassword,
+                                                        keystorePath = Prefs.keystorePath(),
+                                                        keystorePassword = Prefs.keystorePass(),
+                                                        keystoreAlias = Prefs.keystoreAlias(),
+                                                        keystoreAliasPassword = Prefs.keystoreAliasPass(),
                                                         logs = logs,
                                                     ).start()
 
@@ -432,10 +191,10 @@ fun App() {
 
                                                     AabSignTask(
                                                         output = output.path,
-                                                        keystorePath = keystorePath,
-                                                        keystorePassword = keystorePassword,
-                                                        keystoreAlias = keystoreAlias,
-                                                        keystoreAliasPassword = keystoreAliasPassword,
+                                                        keystorePath = Prefs.keystorePath(),
+                                                        keystorePassword = Prefs.keystorePass(),
+                                                        keystoreAlias = Prefs.keystoreAlias(),
+                                                        keystoreAliasPassword = Prefs.keystoreAliasPass(),
                                                         logs = logs,
                                                     ).start()
 
@@ -466,6 +225,270 @@ fun App() {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun SdkCard() {
+    var rulesPath by remember { mutableStateOf(Prefs.rulesPath()) }
+    var mappingPath by remember { mutableStateOf(Prefs.mappingPath()) }
+
+    var sdkPath by remember { mutableStateOf(Prefs.getSdkPath()) }
+    var ndkPath by remember { mutableStateOf(Prefs.getNdkPath()) }
+    var cmakePath by remember { mutableStateOf(Prefs.getCmakePath()) }
+
+    Card(
+        shape = ShapeDefaults.Small
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+        ) {
+            FilePathInputField(
+                modifier = Modifier.fillMaxWidth(),
+                inputHint = "Enter rules path*",
+                selectionDescription = "Select rules file path",
+                inputValue = rulesPath,
+                onValueChange = {
+                    rulesPath = it.replace("\"", "")
+                }
+            )
+            FilePathInputField(
+                modifier = Modifier.fillMaxWidth(),
+                inputHint = "Enter ProGuard mapping path",
+                selectionDescription = "Select ProGuard mapping file path",
+                inputValue = mappingPath,
+                onValueChange = {
+                    mappingPath = it.replace("\"", "")
+                }
+            )
+            DirectoryPathInputField(
+                modifier = Modifier.fillMaxWidth(),
+                hintText = "Enter Android SDK path*",
+                selectText = "Select Android SDK path",
+                inputValue = sdkPath,
+                onValueChange = {
+                    sdkPath = it.replace("\"", "").also { path ->
+                        Prefs.setSdkPath(path)
+                    }
+                }
+            )
+            DirectoryPathInputField(
+                modifier = Modifier.fillMaxWidth(),
+                hintText = "Enter Android NDK path*",
+                selectText = "Select Android NDK path",
+                inputValue = ndkPath,
+                onValueChange = {
+                    ndkPath = it.replace("\"", "").also { path ->
+                        Prefs.setNdkPath(path)
+                    }
+                }
+            )
+            DirectoryPathInputField(
+                modifier = Modifier.fillMaxWidth(),
+                hintText = "Enter CMake path*",
+                selectText = "Select CMake path",
+                inputValue = cmakePath,
+                onValueChange = {
+                    cmakePath = it.replace("\"", "").also { path ->
+                        Prefs.setCmakePath(path)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun OtherCard() {
+    var vmName by remember { mutableStateOf(Prefs.getVmName()) }
+    var nmmpName by remember { mutableStateOf(Prefs.getNmmpName()) }
+    var className by remember { mutableStateOf(Prefs.getRegisterNativesClassName()) }
+    var cxxFlags by remember { mutableStateOf(Prefs.getCxxFlags()) }
+
+    Card(
+        shape = ShapeDefaults.Small
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+        ) {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = vmName,
+                label = { Text("Enter vm name path*") },
+                onValueChange = {
+                    vmName = it.also { name ->
+                        Prefs.setVmName(name)
+                    }
+                }
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = nmmpName,
+                label = { Text("Enter nmmp name path*") },
+                onValueChange = {
+                    nmmpName = it.also { name ->
+                        Prefs.setNmmpName(name)
+                    }
+                }
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = className,
+                label = { Text("Enter class name path*") },
+                onValueChange = {
+                    className = it.also { name ->
+                        Prefs.setRegisterNativesClassName(name)
+                    }
+                }
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = cxxFlags,
+                label = { Text("Enter cxx flags") },
+                onValueChange = {
+                    cxxFlags = it.also { flags ->
+                        Prefs.setCxxFlags(flags)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun KeystoreCard() {
+    var keystorePath by remember { mutableStateOf(Prefs.keystorePath()) }
+    var keystorePassword by remember { mutableStateOf(Prefs.keystorePass()) }
+    var keystoreAlias by remember { mutableStateOf(Prefs.keystoreAlias()) }
+    var keystoreAliasPassword by remember { mutableStateOf(Prefs.keystoreAliasPass()) }
+
+    Card(
+        shape = ShapeDefaults.Small
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+        ) {
+            FilePathInputField(
+                modifier = Modifier.fillMaxWidth(),
+                inputHint = "Enter keystore path*",
+                selectionDescription = "Select skystore file path*",
+                inputValue = keystorePath,
+                onValueChange = {
+                    keystorePath = it.replace("\"", "")
+                }
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = keystorePassword,
+                label = { Text("Enter keystore password*") },
+                onValueChange = {
+                    keystorePassword = it.also { name ->
+                        Prefs.setRegisterNativesClassName(name)
+                    }
+                }
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = keystoreAlias,
+                label = { Text("Enter keystore alias*") },
+                onValueChange = {
+                    keystoreAlias = it.also { name ->
+                        Prefs.setRegisterNativesClassName(name)
+                    }
+                }
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = keystoreAliasPassword,
+                label = { Text("Enter keystore alias password*") },
+                onValueChange = {
+                    keystoreAliasPassword = it.also { name ->
+                        Prefs.setRegisterNativesClassName(name)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun AbiCard() {
+    var arm by remember { mutableStateOf(Prefs.isArm()) }
+    var arm64 by remember { mutableStateOf(Prefs.isArm64()) }
+    var x86 by remember { mutableStateOf(Prefs.isX86()) }
+    var x64 by remember { mutableStateOf(Prefs.isX64()) }
+
+    Card(
+        shape = ShapeDefaults.Small
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+        ) {
+            Row {
+                Text(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    text = "armeabi-v7a"
+                )
+                Switch(
+                    checked = arm,
+                    onCheckedChange = {
+                        arm = it
+                        Prefs.setArm(it)
+                    }
+                )
+            }
+            Row {
+                Text(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    text = "arm64-v8a"
+                )
+                Switch(
+                    checked = arm64,
+                    onCheckedChange = {
+                        arm64 = it
+                        Prefs.setArm64(it)
+                    }
+                )
+            }
+            Row {
+                Text(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    text = "x86"
+                )
+                Switch(
+                    checked = x86,
+                    onCheckedChange = {
+                        x86 = it
+                        Prefs.setX86(it)
+                    }
+                )
+            }
+            Row {
+                Text(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    text = "x86_64"
+                )
+                Switch(
+                    checked = x64,
+                    onCheckedChange = {
+                        x64 = it
+                        Prefs.setX64(it)
+                    }
+                )
             }
         }
     }

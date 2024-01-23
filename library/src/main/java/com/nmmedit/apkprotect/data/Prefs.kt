@@ -138,4 +138,70 @@ object Prefs {
     fun getNdkStrip(): String {
         return Preferences.getString("strip", "/bin/llvm-strip")
     }
+
+    /**
+     * ApkSigner
+     */
+    @JvmStatic
+    fun keystorePath(): String {
+        return Preferences.getString("keystore_path", "nmmp")
+    }
+
+    @JvmStatic
+    fun setKeystorePath(name: String) {
+        Preferences.putString("keystore_path", name)
+    }
+
+    @JvmStatic
+    fun keystorePass(): String {
+        return Preferences.getString("keystore_pass", "nmmp")
+    }
+
+    @JvmStatic
+    fun setKeystorePass(name: String) {
+        Preferences.putString("keystore_pass", name)
+    }
+
+    @JvmStatic
+    fun keystoreAlias(): String {
+        return Preferences.getString("keystore_alias", "nmmp")
+    }
+
+    @JvmStatic
+    fun setKeystoreAlias(name: String) {
+        Preferences.putString("keystore_alias", name)
+    }
+
+    @JvmStatic
+    fun keystoreAliasPass(): String {
+        return Preferences.getString("keystore_alias_pass", "nmmp")
+    }
+
+    @JvmStatic
+    fun setKeystoreAliasPass(name: String) {
+        Preferences.putString("keystore_alias_pass", name)
+    }
+
+    /**
+     * Config
+     */
+    @JvmStatic
+    fun rulesPath(): String {
+        return Preferences.getString("rules_path", "nmmp")
+    }
+
+    @JvmStatic
+    fun setRulesPath(name: String) {
+        Preferences.putString("rules_path", name)
+    }
+
+    @JvmStatic
+    fun mappingPath(): String {
+        return Preferences.getString("mapping_path", "nmmp")
+    }
+
+    @JvmStatic
+    fun setMappingPath(name: String) {
+        Preferences.putString("mapping_path", name)
+    }
 }
