@@ -1,82 +1,83 @@
 package com.nmmedit.apkprotect.data
 
-import com.mcal.preferences.Preferences
+import com.mcal.preferences.PreferencesManager
+import com.nmmedit.apkprotect.data.Storage.binDir
 import com.nmmedit.apkprotect.util.OsDetector
 
-object Prefs {
+object Prefs : PreferencesManager(binDir, "nmmp_preferences.json") {
     @JvmStatic
     fun isArm(): Boolean {
-        return Preferences.getBoolean("arm", true)
+        return getBoolean("arm", true)
     }
 
     @JvmStatic
     fun setArm(mode: Boolean) {
-        Preferences.putBoolean("arm", mode)
+        putBoolean("arm", mode)
     }
 
     @JvmStatic
     fun isArm64(): Boolean {
-        return Preferences.getBoolean("arm64", true)
+        return getBoolean("arm64", true)
     }
 
     @JvmStatic
     fun setArm64(mode: Boolean) {
-        Preferences.putBoolean("arm64", mode)
+        putBoolean("arm64", mode)
     }
 
     @JvmStatic
     fun isX86(): Boolean {
-        return Preferences.getBoolean("x86", true)
+        return getBoolean("x86", true)
     }
 
     @JvmStatic
     fun setX86(mode: Boolean) {
-        Preferences.putBoolean("x86", mode)
+        putBoolean("x86", mode)
     }
 
     @JvmStatic
     fun isX64(): Boolean {
-        return Preferences.getBoolean("x64", true)
+        return getBoolean("x64", true)
     }
 
     @JvmStatic
     fun setX64(mode: Boolean) {
-        Preferences.putBoolean("x64", mode)
+        putBoolean("x64", mode)
     }
 
     @JvmStatic
     fun getVmName(): String {
-        return Preferences.getString("vm_name", "nmmvm")
+        return getString("vm_name", "nmmvm")
     }
 
     @JvmStatic
     fun setVmName(name: String) {
-        Preferences.putString("vm_name", name)
+        putString("vm_name", name)
     }
 
     @JvmStatic
     fun getNmmpName(): String {
-        return Preferences.getString("nmmp_name", "nmmp")
+        return getString("nmmp_name", "nmmp")
     }
 
     @JvmStatic
     fun setNmmpName(name: String) {
-        Preferences.putString("nmmp_name", name)
+        putString("nmmp_name", name)
     }
 
     @JvmStatic
     fun setCxxFlags(flags: String) {
-        Preferences.putString("cxx_flags", flags)
+        putString("cxx_flags", flags)
     }
 
     @JvmStatic
     fun getCxxFlags(): String {
-        return Preferences.getString("cxx_flags", "")
+        return getString("cxx_flags", "")
     }
 
     @JvmStatic
     fun getRegisterNativesClassName(): String {
-        return Preferences.getString(
+        return getString(
             "register_natives_class_name",
             "com/nmmedit/protect/NativeUtil"
         )
@@ -84,47 +85,47 @@ object Prefs {
 
     @JvmStatic
     fun setRegisterNativesClassName(path: String) {
-        Preferences.putString("register_natives_class_name", path)
+        putString("register_natives_class_name", path)
     }
 
     @JvmStatic
     fun getSdkPath(): String {
-        return Preferences.getString("sdk_path", System.getenv("ANDROID_SDK_HOME") ?: "")
+        return getString("sdk_path", System.getenv("ANDROID_SDK_HOME") ?: "")
     }
 
     @JvmStatic
     fun setSdkPath(path: String) {
-        Preferences.putString("sdk_path", path)
+        putString("sdk_path", path)
     }
 
     @JvmStatic
     fun getCmakePath(): String {
-        return Preferences.getString("cmake_path", System.getenv("CMAKE_PATH") ?: "")
+        return getString("cmake_path", System.getenv("CMAKE_PATH") ?: "")
     }
 
     @JvmStatic
     fun setCmakePath(path: String) {
-        Preferences.putString("cmake_path", path)
+        putString("cmake_path", path)
     }
 
     @JvmStatic
     fun getNdkPath(): String {
-        return Preferences.getString("ndk_path", System.getenv("ANDROID_NDK_HOME") ?: "")
+        return getString("ndk_path", System.getenv("ANDROID_NDK_HOME") ?: "")
     }
 
     @JvmStatic
     fun setNdkPath(path: String) {
-        Preferences.putString("ndk_path", path)
+        putString("ndk_path", path)
     }
 
     @JvmStatic
     fun getNdkToolchains(): String {
-        return Preferences.getString("toolchains", "/toolchains/llvm/prebuilt/")
+        return getString("toolchains", "/toolchains/llvm/prebuilt/")
     }
 
     @JvmStatic
     fun getNdkAbi(): String {
-        return Preferences.getString(
+        return getString(
             "abi",
             if (OsDetector.isWindows) {
                 "windows-x86_64"
@@ -136,72 +137,6 @@ object Prefs {
 
     @JvmStatic
     fun getNdkStrip(): String {
-        return Preferences.getString("strip", "/bin/llvm-strip")
-    }
-
-    /**
-     * ApkSigner
-     */
-    @JvmStatic
-    fun keystorePath(): String {
-        return Preferences.getString("keystore_path", "nmmp")
-    }
-
-    @JvmStatic
-    fun setKeystorePath(name: String) {
-        Preferences.putString("keystore_path", name)
-    }
-
-    @JvmStatic
-    fun keystorePass(): String {
-        return Preferences.getString("keystore_pass", "nmmp")
-    }
-
-    @JvmStatic
-    fun setKeystorePass(name: String) {
-        Preferences.putString("keystore_pass", name)
-    }
-
-    @JvmStatic
-    fun keystoreAlias(): String {
-        return Preferences.getString("keystore_alias", "nmmp")
-    }
-
-    @JvmStatic
-    fun setKeystoreAlias(name: String) {
-        Preferences.putString("keystore_alias", name)
-    }
-
-    @JvmStatic
-    fun keystoreAliasPass(): String {
-        return Preferences.getString("keystore_alias_pass", "nmmp")
-    }
-
-    @JvmStatic
-    fun setKeystoreAliasPass(name: String) {
-        Preferences.putString("keystore_alias_pass", name)
-    }
-
-    /**
-     * Config
-     */
-    @JvmStatic
-    fun rulesPath(): String {
-        return Preferences.getString("rules_path", "nmmp")
-    }
-
-    @JvmStatic
-    fun setRulesPath(name: String) {
-        Preferences.putString("rules_path", name)
-    }
-
-    @JvmStatic
-    fun mappingPath(): String {
-        return Preferences.getString("mapping_path", "nmmp")
-    }
-
-    @JvmStatic
-    fun setMappingPath(name: String) {
-        Preferences.putString("mapping_path", name)
+        return getString("strip", "/bin/llvm-strip")
     }
 }

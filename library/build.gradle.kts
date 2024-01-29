@@ -16,7 +16,7 @@ sourceSets {
 
 dependencies {
     implementation("com.github.timscriptov:apkparser:1.2.7")
-    implementation("com.github.timscriptov:preferences:1.0.2")
+    implementation("com.github.timscriptov:preferences:1.0.4")
     implementation("com.android.tools.smali:smali-dexlib2:3.0.3")
     implementation("org.jetbrains:annotations:24.0.1")
     implementation("com.google.guava:guava:32.0.0-jre")

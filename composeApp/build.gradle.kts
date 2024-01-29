@@ -29,7 +29,7 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.2")
 
-            implementation("com.github.timscriptov:preferences:1.0.1")
+            implementation("com.github.timscriptov:preferences:1.0.4")
 
             implementation("org.slf4j:slf4j-simple:1.6.1")
         }

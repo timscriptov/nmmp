@@ -15,12 +15,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.mcal.preferences.Preferences
 import com.nmmedit.apkprotect.data.Prefs
-import com.nmmedit.apkprotect.data.Storage
 import composition.ButtonDefault
 import composition.DirectoryPathInputField
 import composition.FilePathInputField
+import data.AppPrefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -137,8 +136,8 @@ fun App() {
                                 enabled = isEnabled,
                                 onClick = {
                                     CoroutineScope(Dispatchers.IO).launch {
-                                        val rulesPath = Prefs.rulesPath()
-                                        val mappingPath = Prefs.mappingPath()
+                                        val rulesPath = AppPrefs.rulesPath()
+                                        val mappingPath = AppPrefs.mappingPath()
                                         isEnabled = false
                                         if (inputFilePath.isEmpty()) {
                                             logs.add("W: Enter APK/AAB/AAR path")
@@ -167,10 +166,10 @@ fun App() {
 
                                                     ApkSignTask(
                                                         output = output.path,
-                                                        keystorePath = Prefs.keystorePath(),
-                                                        keystorePassword = Prefs.keystorePass(),
-                                                        keystoreAlias = Prefs.keystoreAlias(),
-                                                        keystoreAliasPassword = Prefs.keystoreAliasPass(),
+                                                        keystorePath = AppPrefs.keystorePath(),
+                                                        keystorePassword = AppPrefs.keystorePass(),
+                                                        keystoreAlias = AppPrefs.keystoreAlias(),
+                                                        keystoreAliasPassword = AppPrefs.keystoreAliasPass(),
                                                         logs = logs,
                                                     ).start()
 
@@ -191,10 +190,10 @@ fun App() {
 
                                                     AabSignTask(
                                                         output = output.path,
-                                                        keystorePath = Prefs.keystorePath(),
-                                                        keystorePassword = Prefs.keystorePass(),
-                                                        keystoreAlias = Prefs.keystoreAlias(),
-                                                        keystoreAliasPassword = Prefs.keystoreAliasPass(),
+                                                        keystorePath = AppPrefs.keystorePath(),
+                                                        keystorePassword = AppPrefs.keystorePass(),
+                                                        keystoreAlias = AppPrefs.keystoreAlias(),
+                                                        keystoreAliasPassword = AppPrefs.keystoreAliasPass(),
                                                         logs = logs,
                                                     ).start()
 
@@ -232,8 +231,8 @@ fun App() {
 
 @Composable
 fun SdkCard() {
-    var rulesPath by remember { mutableStateOf(Prefs.rulesPath()) }
-    var mappingPath by remember { mutableStateOf(Prefs.mappingPath()) }
+    var rulesPath by remember { mutableStateOf(AppPrefs.rulesPath()) }
+    var mappingPath by remember { mutableStateOf(AppPrefs.mappingPath()) }
 
     var sdkPath by remember { mutableStateOf(Prefs.getSdkPath()) }
     var ndkPath by remember { mutableStateOf(Prefs.getNdkPath()) }
@@ -252,7 +251,9 @@ fun SdkCard() {
                 selectionDescription = "Select rules file path",
                 inputValue = rulesPath,
                 onValueChange = {
-                    rulesPath = it.replace("\"", "")
+                    rulesPath = it.replace("\"", "").also { path ->
+                        AppPrefs.setRulesPath(path)
+                    }
                 }
             )
             FilePathInputField(
@@ -261,7 +262,9 @@ fun SdkCard() {
                 selectionDescription = "Select ProGuard mapping file path",
                 inputValue = mappingPath,
                 onValueChange = {
-                    mappingPath = it.replace("\"", "")
+                    mappingPath = it.replace("\"", "").also { path ->
+                        AppPrefs.setMappingPath(path)
+                    }
                 }
             )
             DirectoryPathInputField(
@@ -361,10 +364,10 @@ fun OtherCard() {
 
 @Composable
 fun KeystoreCard() {
-    var keystorePath by remember { mutableStateOf(Prefs.keystorePath()) }
-    var keystorePassword by remember { mutableStateOf(Prefs.keystorePass()) }
-    var keystoreAlias by remember { mutableStateOf(Prefs.keystoreAlias()) }
-    var keystoreAliasPassword by remember { mutableStateOf(Prefs.keystoreAliasPass()) }
+    var keystorePath by remember { mutableStateOf(AppPrefs.keystorePath()) }
+    var keystorePassword by remember { mutableStateOf(AppPrefs.keystorePass()) }
+    var keystoreAlias by remember { mutableStateOf(AppPrefs.keystoreAlias()) }
+    var keystoreAliasPassword by remember { mutableStateOf(AppPrefs.keystoreAliasPass()) }
 
     Card(
         shape = ShapeDefaults.Small
@@ -379,7 +382,9 @@ fun KeystoreCard() {
                 selectionDescription = "Select skystore file path*",
                 inputValue = keystorePath,
                 onValueChange = {
-                    keystorePath = it.replace("\"", "")
+                    keystorePath = it.replace("\"", "").also { path ->
+                        AppPrefs.setKeystorePath(path)
+                    }
                 }
             )
             OutlinedTextField(
@@ -388,7 +393,7 @@ fun KeystoreCard() {
                 label = { Text("Enter keystore password*") },
                 onValueChange = {
                     keystorePassword = it.also { name ->
-                        Prefs.setRegisterNativesClassName(name)
+                        AppPrefs.setKeystorePass(name)
                     }
                 }
             )
@@ -398,7 +403,7 @@ fun KeystoreCard() {
                 label = { Text("Enter keystore alias*") },
                 onValueChange = {
                     keystoreAlias = it.also { name ->
-                        Prefs.setRegisterNativesClassName(name)
+                        AppPrefs.setKeystoreAlias(name)
                     }
                 }
             )
@@ -408,7 +413,7 @@ fun KeystoreCard() {
                 label = { Text("Enter keystore alias password*") },
                 onValueChange = {
                     keystoreAliasPassword = it.also { name ->
-                        Prefs.setRegisterNativesClassName(name)
+                        AppPrefs.setKeystoreAliasPass(name)
                     }
                 }
             )
@@ -495,7 +500,6 @@ fun AbiCard() {
 }
 
 fun main() = application {
-    Preferences(Storage.binDir, "nmmp_preferences.json").init()
     Window(
         title = "VMP",
         state = rememberWindowState(width = 800.dp, height = 600.dp),
