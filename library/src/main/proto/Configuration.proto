@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2017 The Android Open Source Project
  *
@@ -103,6 +102,12 @@ message Configuration {
     NAVIGATION_TRACKBALL = 3;
     NAVIGATION_WHEEL = 4;
   }
+  enum GrammaticalGender {
+    GRAM_GENDER_USET = 0;
+    GRAM_GENDER_NEUTER = 1;
+    GRAM_GENDER_FEMININE = 2;
+    GRAM_GENDER_MASCULINE = 3;
+  }
   //
   // Axis/dimensions that are understood by the runtime.
   //
@@ -156,6 +161,8 @@ message Configuration {
   Navigation navigation = 23;
   // The minimum SDK version of the device.
   uint32 sdk_version = 24;
+  // Grammatical gender.
+  GrammaticalGender grammatical_gender = 26;
   //
   // Build-time only dimensions.
   //

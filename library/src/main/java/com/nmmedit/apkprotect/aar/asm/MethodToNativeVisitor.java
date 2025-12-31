@@ -1,6 +1,5 @@
 package com.nmmedit.apkprotect.aar.asm;
 
-import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -21,21 +20,6 @@ public class MethodToNativeVisitor extends ClassVisitor {
         this.convertedMethods = convertedMethods;
     }
 
-    //生成第一个方法调用第二个的字节码
-    private static void genCall(ClassVisitor cv, @NotNull AsmMethod method1, @NotNull AsmMethod method2) {
-        final String sig1 = method1.descriptor;
-        final String sig2 = method2.descriptor;
-        if (!sig1.equals(sig2)) {
-            throw new IllegalStateException();
-        }
-        final MethodVisitor mv = cv.visitMethod(method1.access, method1.name, sig1, null, null);
-
-    }
-
-    private static void genLoadInsn(MethodVisitor mv, int slotIdx, String methodName, String sig) {
-
-    }
-
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
         final List<AsmMethod> myMethods = convertedMethods.get(new AsmMethod(access, name, descriptor));
@@ -49,5 +33,20 @@ public class MethodToNativeVisitor extends ClassVisitor {
             // todo 生成第一个方法调用第二个方法代码，解决一些native方法无法正常初始化问题。
         }
         return super.visitMethod(access, name, descriptor, signature, exceptions);
+    }
+
+    //生成第一个方法调用第二个的字节码
+    private static void genCall(ClassVisitor cv, AsmMethod method1, AsmMethod method2) {
+        final String sig1 = method1.descriptor;
+        final String sig2 = method2.descriptor;
+        if (!sig1.equals(sig2)) {
+            throw new IllegalStateException();
+        }
+        final MethodVisitor mv = cv.visitMethod(method1.access, method1.name, sig1, null, null);
+
+    }
+
+    private static void genLoadInsn(MethodVisitor mv, int slotIdx, String methodName, String sig) {
+       
     }
 }

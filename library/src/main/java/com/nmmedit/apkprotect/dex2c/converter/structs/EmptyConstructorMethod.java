@@ -11,8 +11,8 @@ import com.android.tools.smali.dexlib2.iface.Annotation;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.android.tools.smali.dexlib2.iface.MethodImplementation;
 import com.android.tools.smali.dexlib2.iface.MethodParameter;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -21,26 +21,26 @@ import java.util.Set;
 
 /**
  * .method public constructor <init>()V
- * .locals 0
- * invoke-direct {p0}, Landroid/app/Application;-><init>()V
- * return-void
+ *     .locals 0
+ *     invoke-direct {p0}, Landroid/app/Application;-><init>()V
+ *     return-void
  * .end method
  */
 
 public class EmptyConstructorMethod extends BaseMethodReference implements Method {
 
-    @NotNull
+    @Nonnull
     private final String definingClass;
 
-    @NotNull
+    @Nonnull
     private final String superClass;
 
-    public EmptyConstructorMethod(@NotNull String definingClass, @NotNull String superClass) {
+    public EmptyConstructorMethod(@Nonnull String definingClass, @Nonnull String superClass) {
         this.definingClass = definingClass;
         this.superClass = superClass;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public List<? extends MethodParameter> getParameters() {
         return Collections.emptyList();
@@ -52,13 +52,13 @@ public class EmptyConstructorMethod extends BaseMethodReference implements Metho
                 | AccessFlags.PUBLIC.getValue();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Set<? extends Annotation> getAnnotations() {
         return Collections.emptySet();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Set<HiddenApiRestriction> getHiddenApiRestrictions() {
         return Collections.emptySet();
@@ -69,25 +69,25 @@ public class EmptyConstructorMethod extends BaseMethodReference implements Metho
         final MutableMethodImplementation implementation = new MutableMethodImplementation(1);
         implementation.addInstruction(new BuilderInstruction35c(Opcode.INVOKE_DIRECT, 1,
                 0, 0, 0, 0, 0, new BaseMethodReference() {
-            @NotNull
+            @Nonnull
             @Override
             public String getDefiningClass() {
                 return superClass;
             }
 
-            @NotNull
+            @Nonnull
             @Override
             public String getName() {
                 return "<init>";
             }
 
-            @NotNull
+            @Nonnull
             @Override
             public List<? extends CharSequence> getParameterTypes() {
                 return Collections.emptyList();
             }
 
-            @NotNull
+            @Nonnull
             @Override
             public String getReturnType() {
                 return "V";
@@ -98,25 +98,25 @@ public class EmptyConstructorMethod extends BaseMethodReference implements Metho
         return implementation;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public String getDefiningClass() {
         return definingClass;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public String getName() {
         return "<init>";
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public List<? extends CharSequence> getParameterTypes() {
         return Collections.emptyList();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public String getReturnType() {
         return "V";

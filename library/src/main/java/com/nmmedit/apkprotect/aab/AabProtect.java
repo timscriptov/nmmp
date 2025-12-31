@@ -1,24 +1,20 @@
 package com.nmmedit.apkprotect.aab;
 
-import com.mcal.apkparser.zip.ZipEntry;
-import com.mcal.apkparser.zip.ZipFile;
-import com.mcal.apkparser.zip.ZipOutputStream;
+import com.android.zipflinger.*;
 import com.nmmedit.apkprotect.ApkProtect;
 import com.nmmedit.apkprotect.BuildNativeLib;
 import com.nmmedit.apkprotect.aab.proto.ProtoUtils;
-import com.nmmedit.apkprotect.data.Prefs;
 import com.nmmedit.apkprotect.dex2c.Dex2c;
 import com.nmmedit.apkprotect.dex2c.GlobalDexConfig;
 import com.nmmedit.apkprotect.dex2c.converter.ClassAnalyzer;
 import com.nmmedit.apkprotect.dex2c.converter.instructionrewriter.InstructionRewriter;
 import com.nmmedit.apkprotect.dex2c.filters.ClassAndMethodFilter;
-import com.nmmedit.apkprotect.log.VmpLogger;
 import com.nmmedit.apkprotect.util.ApkUtils;
 import com.nmmedit.apkprotect.util.CmakeUtils;
-import com.nmmedit.apkprotect.util.FileHelper;
-import com.nmmedit.apkprotect.util.ZipHelper;
+import com.nmmedit.apkprotect.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +22,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.Deflater;
 
 public class AabProtect {
     public static final String ANDROID_MANIFEST_XML = "base/manifest/AndroidManifest.xml";
@@ -34,17 +31,16 @@ public class AabProtect {
     public static final String BUNDLE_MAPPING = "BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map";
     public static final String BUNDLE_CONFIG = "BundleConfig.pb";
     public static final String NATIVE_PB = "base/native.pb";
-    public static VmpLogger vmpLogger;
-    @NotNull
+    @Nonnull
     private final AabFolders aabFolders;
-    @NotNull
+    @Nonnull
     private final InstructionRewriter instructionRewriter;
     private final ClassAnalyzer classAnalyzer;
     private final ClassAndMethodFilter filter;
 
-    public AabProtect(@NotNull AabFolders aabFolders,
-                      @NotNull InstructionRewriter instructionRewriter,
-                      @NotNull ClassAnalyzer classAnalyzer,
+    public AabProtect(@Nonnull AabFolders aabFolders,
+                      @Nonnull InstructionRewriter instructionRewriter,
+                      @Nonnull ClassAnalyzer classAnalyzer,
                       ClassAndMethodFilter filter) {
         this.aabFolders = aabFolders;
         this.instructionRewriter = instructionRewriter;
@@ -52,89 +48,21 @@ public class AabProtect {
         this.filter = filter;
     }
 
-    @NotNull
-    private static List<File> getClassesFiles(File apkFile, File zipExtractDir) throws IOException {
-        List<File> files = ApkUtils.extractFiles(apkFile, "base/dex/classes(\\d+)*\\.dex", zipExtractDir);
-        //根据classes索引大小排序
-        files.sort((file, t1) -> {
-            final String numb = file.getName().replace("classes", "").replace(".dex", "");
-            final String numb2 = t1.getName().replace("classes", "").replace(".dex", "");
-            int n, n2;
-            if (numb.isEmpty()) {
-                n = 0;
-            } else {
-                n = Integer.parseInt(numb);
-            }
-            if (numb2.isEmpty()) {
-                n2 = 0;
-            } else {
-                n2 = Integer.parseInt(numb2);
-            }
-            return n - n2;
-        });
-        return files;
-    }
-
-    //根据aab文件得到abi，如果没有本地库则返回x86及arm所有abi
-    private static @NotNull List<String> getAbis(File aab) throws IOException {
-        final Pattern pattern = Pattern.compile("base/lib/(.*)/.*\\.so");
-        Set<String> abis = new HashSet<>();
-        try (ZipFile zipFile = new ZipFile(aab)) {
-            final Enumeration<? extends ZipEntry> entries = zipFile.getEntries();
-            while (entries.hasMoreElements()) {
-                final ZipEntry entry = entries.nextElement();
-                final Matcher matcher = pattern.matcher(entry.getName());
-                if (matcher.matches()) {
-                    abis.add(matcher.group(1));
-                }
-            }
-            //不支持armeabi，可能还要删除mips相关
-            abis.remove("armeabi");
-            abis.remove("mips");
-            abis.remove("mips64");
-
-            if (abis.isEmpty()) {
-                //默认只生成armeabi-v7a
-                ArrayList<String> abi = new ArrayList<>();
-                if (Prefs.isArm()) {
-                    abi.add("armeabi-v7a");
-                }
-                if (Prefs.isArm64()) {
-                    abi.add("arm64-v8a");
-                }
-
-                if (Prefs.isX86()) {
-                    abi.add("x86");
-                }
-
-                if (Prefs.isX64()) {
-                    abi.add("x86_64");
-                }
-                return abi;
-            }
-        }
-        return new ArrayList<>(abis);
-    }
-
-    public static @NotNull InputStream getAabProguardMapping(File aab) throws IOException {
-        return FileHelper.bytesToInputStream(ZipHelper.getZipFileContent(aab, BUNDLE_MAPPING));
-    }
-
     public void run() throws IOException {
         final File inAab = aabFolders.getInAab();
         final File zipExtractDir = aabFolders.getZipExtractTempDir();
 
+
         try {
-            final VmpLogger log = vmpLogger;
             byte[] manifestBytes = ApkUtils.getFile(inAab, ANDROID_MANIFEST_XML);
             if (manifestBytes == null) {
                 //错误aab文件
-                if (log != null) {
-                    log.warning("Not is aab");
-                } else {
-                    throw new RuntimeException("Not is aab");
-                }
+                throw new RuntimeException("Not is aab");
             }
+
+
+            final String packageName = ProtoUtils.AndroidManifest.getPackageName(manifestBytes);
+
 
             //生成一些需要改变的c代码(随机opcode后的头文件及apk验证代码等)
             CmakeUtils.generateCSources(aabFolders.getDex2cSrcDir(), instructionRewriter);
@@ -142,11 +70,7 @@ public class AabProtect {
             //解压得到所有classesN.dex
             List<File> files = getClassesFiles(inAab, zipExtractDir);
             if (files.isEmpty()) {
-                if (log != null) {
-                    log.warning("No classes.dex");
-                } else {
-                    throw new RuntimeException("No classes.dex");
-                }
+                throw new RuntimeException("No classes.dex");
             }
             for (File file : files) {
                 classAnalyzer.loadDexFile(file);
@@ -160,6 +84,7 @@ public class AabProtect {
                     instructionRewriter,
                     classAnalyzer,
                     aabFolders.getCodeGeneratedDir());
+
 
             //需要放在主dex里的类
             final Set<String> mainDexClassTypeSet = new HashSet<>();
@@ -183,7 +108,7 @@ public class AabProtect {
 
             final File newMainDex = ApkProtect.internNativeUtilClassDef(
                     mainDex,
-                    globalConfig, Prefs.getNmmpName());
+                    globalConfig, BuildNativeLib.NMMP_NAME);
             //替换为新的dex
             outDexFiles.set(0, newMainDex);
 
@@ -197,77 +122,133 @@ public class AabProtect {
             if (outputAab.exists()) {
                 outputAab.delete();
             }
+            try (
+                    //输出的zip文件
+                    final ZipArchive zipArchive = new ZipArchive(outputAab.toPath());
+            ) {
+                final ZipMap zipMap = ZipMap.from(inAab.toPath());
 
-            try (ZipFile zipFile = new ZipFile(inAab)) {
-                try (ZipOutputStream zos = new ZipOutputStream(outputAab)) {
-                    //add new BundleConfig.pb
-                    final byte[] configBytes = ZipHelper.getZipFileContent(inAab, BUNDLE_CONFIG);
-                    final byte[] newConfigBytes = ProtoUtils.BundleConfig.editConfig(configBytes);
+                zipCopy(zipMap, zipArchive);
 
-                    zos.putNextEntry(BUNDLE_CONFIG);
-                    zos.write(newConfigBytes);
-                    zos.closeEntry();
+                //add new BundleConfig.pb
+                final byte[] configBytes = ApkUtils.getFile(inAab, BUNDLE_CONFIG);
+                final byte[] newConfigBytes = ProtoUtils.BundleConfig.editConfig(configBytes);
+                final BytesSource configSource = new BytesSource(newConfigBytes, BUNDLE_CONFIG, Deflater.DEFAULT_COMPRESSION);
+                zipArchive.add(configSource);
 
-                    //add new AndroidManifest.xml
-                    final byte[] newManifestBytes = ProtoUtils.AndroidManifest.editAndroidManifest(manifestBytes);
+                //add new AndroidManifest.xml
+                final byte[] newManifestBytes = ProtoUtils.AndroidManifest.editAndroidManifest(manifestBytes);
+                final BytesSource manifestSource = new BytesSource(newManifestBytes, ANDROID_MANIFEST_XML, Deflater.DEFAULT_COMPRESSION);
+                zipArchive.add(manifestSource);
 
-                    zos.putNextEntry(ANDROID_MANIFEST_XML);
-                    zos.write(newManifestBytes);
-                    zos.closeEntry();
 
-                    //add classesN.dex
-                    for (File file : outDexFiles) {
-                        zos.putNextEntry("base/dex/" + file.getName());
-                        zos.write(FileHelper.readBytes(file));
-                        zos.closeEntry();
-                    }
+                //add classesN.dex
+                for (File file : outDexFiles) {
+                    final Source source = Sources.from(file, "base/dex/" + file.getName(), Deflater.DEFAULT_COMPRESSION);
+                    zipArchive.add(source);
+                }
 
-                    //add native libs
-                    for (Map.Entry<String, Map<File, File>> entry : nativeLibs.entrySet()) {
-                        for (Map.Entry<File, File> soEntry : entry.getValue().entrySet()) {
-                            final File stripSo = soEntry.getValue();
-                            //add strip so
-                            zos.putNextEntry("base/lib/" + entry.getKey() + "/" + stripSo.getName());
-                            zos.write(FileHelper.readBytes(stripSo));
-                            zos.closeEntry();
-
-                            //add symbol so
-                            final File symSo = soEntry.getKey();
-                            zos.putNextEntry(BUNDLE_DEBUG_SYMBOL + entry.getKey() + "/" + symSo.getName() + ".sym");
-                            zos.write(FileHelper.readBytes(symSo));
-                            zos.closeEntry();
-                        }
-                    }
-
-                    //add base/native.pb
-                    final ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                    ProtoUtils.NativeLibraries.writeNativePB(abis, bout);
-                    zos.putNextEntry(NATIVE_PB);
-                    zos.write(bout.toByteArray());
-                    zos.closeEntry();
-
-                    final Pattern regex = Pattern.compile(
-                            "base/dex/classes(\\d)*\\.dex" +
-                                    "|META-INF/.*\\.(RSA|DSA|EC|SF|MF)" +
-                                    "|" + NATIVE_PB +
-                                    "|" + ANDROID_MANIFEST_XML +
-                                    "|" + BUNDLE_CONFIG);
-                    final Enumeration<ZipEntry> enumeration = zipFile.getEntries();
-                    while (enumeration.hasMoreElements()) {
-                        final ZipEntry ze = enumeration.nextElement();
-                        final String entryName = ze.getName();
-                        if (regex.matcher(entryName).matches()) {
-                            continue;
-                        }
-                        zos.copyZipEntry(ze, zipFile);
+                //add native libs
+                for (Map.Entry<String, Map<File, File>> entry : nativeLibs.entrySet()) {
+                    for (Map.Entry<File, File> soEntry : entry.getValue().entrySet()) {
+                        final File stripSo = soEntry.getValue();
+                        //add strip so
+                        final Source source = Sources.from(stripSo, "base/lib/" + entry.getKey() + "/" + stripSo.getName(), Deflater.DEFAULT_COMPRESSION);
+                        zipArchive.add(source);
+                        //add symbol so
+                        final File symSo = soEntry.getKey();
+                        final Source symSource = Sources.from(symSo, BUNDLE_DEBUG_SYMBOL + entry.getKey() + "/" + symSo.getName() + ".sym", Deflater.DEFAULT_COMPRESSION);
+                        zipArchive.add(symSource);
                     }
                 }
+
+                //add base/native.pb
+                final ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                ProtoUtils.NativeLibraries.writeNativePB(abis, bout);
+
+                final BytesSource nativeSource = new BytesSource(bout.toByteArray(), NATIVE_PB, Deflater.DEFAULT_COMPRESSION);
+                zipArchive.add(nativeSource);
             }
+
         } finally {
             //删除解压缓存目录
-            FileHelper.deleteFile(zipExtractDir);
+            FileUtils.deleteFile(zipExtractDir);
         }
     }
+
+    @Nonnull
+    private static List<File> getClassesFiles(File apkFile, File zipExtractDir) throws IOException {
+        List<File> files = ApkUtils.extractFiles(apkFile, "base/dex/classes(\\d+)*\\.dex", zipExtractDir);
+        //根据classes索引大小排序
+        files.sort((file, t1) -> {
+            final String numb = file.getName().replace("classes", "").replace(".dex", "");
+            final String numb2 = t1.getName().replace("classes", "").replace(".dex", "");
+            int n, n2;
+            if (numb.isEmpty()) {
+                n = 0;
+            } else {
+                n = Integer.parseInt(numb);
+            }
+            if (numb2.isEmpty()) {
+                n2 = 0;
+            } else {
+                n2 = Integer.parseInt(numb2);
+            }
+            return n - n2;
+        });
+        return files;
+    }
+
+
+    private static void zipCopy(ZipMap zipMap, ZipArchive outArchive) throws IOException {
+        //忽略一些需要修改的文件
+        final Pattern regex = Pattern.compile(
+                "base/dex/classes(\\d)*\\.dex" +
+                        "|META-INF/.*\\.(RSA|DSA|EC|SF|MF)" +
+                        "|" + NATIVE_PB +
+                        "|" + ANDROID_MANIFEST_XML +
+                        "|" + BUNDLE_CONFIG);
+        //处理后的zip数据
+        final ZipSource zipSource = new ZipSource(zipMap);
+        for (Map.Entry<String, Entry> entryEntry : zipMap.getEntries().entrySet()) {
+            final String entryName = entryEntry.getKey();
+            if (regex.matcher(entryName).matches()) {
+                continue;
+            }
+            zipSource.select(entryName, entryName);
+        }
+        outArchive.add(zipSource);
+    }
+
+    //根据aab文件得到abi，如果没有本地库则返回四个abi
+    private static @NotNull List<String> getAbis(File aab) throws IOException {
+        final Pattern pattern = Pattern.compile("base/lib/(.*)/.*\\.so");
+        Set<String> abis = new HashSet<>();
+        try (ZipArchive zipArchive = new ZipArchive(aab.toPath())) {
+            for (String entry : zipArchive.listEntries()) {
+                final Matcher matcher = pattern.matcher(entry);
+                if (matcher.matches()) {
+                    abis.add(matcher.group(1));
+                }
+            }
+        }
+        //不支持armeabi，可能还要删除mips相关
+        abis.remove("armeabi");
+        abis.remove("mips");
+        abis.remove("mips64");
+
+        if (abis.isEmpty()) {
+            return Arrays.asList("armeabi-v7a", "arm64-v8a", "x86", "x86_64");
+        }
+        return new ArrayList<>(abis);
+    }
+
+
+    public static InputStream getAabProguardMapping(@NotNull File aab) throws IOException {
+        final ZipArchive zipArchive = new ZipArchive(aab.toPath());
+        return zipArchive.getInputStream(BUNDLE_MAPPING);
+    }
+
 
     public static class Builder {
         private final AabFolders aabFolders;
@@ -296,25 +277,12 @@ public class AabProtect {
             return this;
         }
 
-        public void setLogger(VmpLogger logger) {
-            vmpLogger = logger;
-        }
-
         public AabProtect build() {
-            final VmpLogger logger = vmpLogger;
             if (instructionRewriter == null) {
-                if (logger != null) {
-                    logger.warning("instructionRewriter == null");
-                } else {
-                    throw new RuntimeException("instructionRewriter == null");
-                }
+                throw new RuntimeException("instructionRewriter == null");
             }
             if (classAnalyzer == null) {
-                if (logger != null) {
-                    logger.warning("classAnalyzer == null");
-                } else {
-                    throw new RuntimeException("classAnalyzer == null");
-                }
+                throw new RuntimeException("classAnalyzer == null");
             }
             return new AabProtect(aabFolders, instructionRewriter, classAnalyzer, filter);
         }

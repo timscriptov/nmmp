@@ -10,11 +10,9 @@ import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation;
 import com.android.tools.smali.dexlib2.builder.instruction.*;
 import com.android.tools.smali.dexlib2.iface.*;
 import com.google.common.collect.Iterables;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,25 +40,12 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
         this.registerNativeMethodName = registerNativeMethodName;
     }
 
-    @Contract("_, _ -> new")
-    private static @NotNull BuilderInstruction buildConstInst(int regA, int i) {
-        if (i < 0) {
-            throw new RuntimeException("invalid index " + i);
-        }
-        if (i <= 7) {
-            return new BuilderInstruction11n(Opcode.CONST_4, regA, i);
-        }
-        if (i <= 0x7fff) {
-            return new BuilderInstruction21s(Opcode.CONST_16, regA, i);
-        }
-        return new BuilderInstruction31i(Opcode.CONST, regA, i);
-    }
-
-    @NotNull
+    @Nonnull
     @Override
     public String getType() {
         return classDef.getType();
     }
+
 
     @Override
     public int getAccessFlags() {
@@ -73,7 +58,7 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
         return classDef.getSuperclass();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public List<String> getInterfaces() {
         return classDef.getInterfaces();
@@ -85,31 +70,31 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
         return classDef.getSourceFile();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Set<? extends Annotation> getAnnotations() {
         return classDef.getAnnotations();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getStaticFields() {
         return classDef.getStaticFields();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getInstanceFields() {
         return classDef.getInstanceFields();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getFields() {
         return classDef.getFields();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getDirectMethods() {
         final Iterable<? extends Method> directMethods = classDef.getDirectMethods();
@@ -135,17 +120,18 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
         return methods;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getVirtualMethods() {
         return classDef.getVirtualMethods();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getMethods() {
         return Iterables.concat(getDirectMethods(), getVirtualMethods());
     }
+
 
     @Override
     public void validateReference() throws InvalidReferenceException {
@@ -160,33 +146,31 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
             this.method = method;
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public String getDefiningClass() {
             return method == null ? getType() : method.getDefiningClass();
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public String getName() {
             return CLINIT_METHOD;
         }
 
-        @Contract(pure = true)
-        @NotNull
+        @Nonnull
         @Override
-        public @Unmodifiable List<? extends CharSequence> getParameterTypes() {
+        public List<? extends CharSequence> getParameterTypes() {
             return Collections.emptyList();
         }
 
-        @Contract(pure = true)
-        @NotNull
+        @Nonnull
         @Override
-        public @Unmodifiable List<? extends MethodParameter> getParameters() {
+        public List<? extends MethodParameter> getParameters() {
             return Collections.emptyList();
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public String getReturnType() {
             return "V";
@@ -199,20 +183,20 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
                     | AccessFlags.STATIC.getValue();
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Set<? extends Annotation> getAnnotations() {
             return method == null ? Collections.emptySet() : method.getAnnotations();
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Set<HiddenApiRestriction> getHiddenApiRestrictions() {
             return method == null ? Collections.emptySet() : method.getHiddenApiRestrictions();
         }
 
         @Override
-        public @NotNull MethodImplementation getImplementation() {
+        public MethodImplementation getImplementation() {
             if (method == null) {
                 final MutableMethodImplementation newImpl = new MutableMethodImplementation(1);
                 final List<BuilderInstruction> insns = getCallRegisterNativesMethod();
@@ -245,31 +229,31 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
         }
 
         //classesInit0(classIdx);
-        private @NotNull List<BuilderInstruction> getCallRegisterNativesMethod() {
+        private List<BuilderInstruction> getCallRegisterNativesMethod() {
             final List<BuilderInstruction> insns = new ArrayList<>();
             insns.add(buildConstInst(0, classIdx));
             insns.add(new BuilderInstruction35c(Opcode.INVOKE_STATIC, 1,
                     0, 0, 0, 0, 0,
                     new BaseMethodReference() {
-                        @NotNull
+                        @Nonnull
                         @Override
                         public String getDefiningClass() {
                             return registerNativeDefiningClass;
                         }
 
-                        @NotNull
+                        @Nonnull
                         @Override
                         public String getName() {
                             return registerNativeMethodName;
                         }
 
-                        @NotNull
+                        @Nonnull
                         @Override
                         public List<? extends CharSequence> getParameterTypes() {
                             return Collections.singletonList("I");
                         }
 
-                        @NotNull
+                        @Nonnull
                         @Override
                         public String getReturnType() {
                             return "V";
@@ -278,5 +262,20 @@ public class RegisterNativesCallerClassDef extends BaseTypeReference implements 
             ));
             return insns;
         }
+
     }
+
+    private static BuilderInstruction buildConstInst(int regA, int i) {
+        if (i < 0) {
+            throw new RuntimeException("invalid index " + i);
+        }
+        if (i <= 7) {
+            return new BuilderInstruction11n(Opcode.CONST_4, regA, i);
+        }
+        if (i <= 0x7fff) {
+            return new BuilderInstruction21s(Opcode.CONST_16, regA, i);
+        }
+        return new BuilderInstruction31i(Opcode.CONST, regA, i);
+    }
+
 }

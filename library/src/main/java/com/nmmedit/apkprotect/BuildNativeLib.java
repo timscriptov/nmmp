@@ -1,24 +1,42 @@
 package com.nmmedit.apkprotect;
 
 import com.nmmedit.apkprotect.data.Prefs;
-import com.nmmedit.apkprotect.log.VmpLogger;
-import com.nmmedit.apkprotect.util.FileHelper;
+import com.nmmedit.apkprotect.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.nmmedit.apkprotect.ApkProtect.vmpLogger;
-
 public class BuildNativeLib {
-    public static @NotNull Map<String, Map<File, File>> generateNativeLibs(@NotNull File outDir,
-                                                                           @NotNull final List<String> abis) throws IOException {
-        String cmakePath = Prefs.getCmakePath();
-        String sdkHome = Prefs.getSdkPath();
-        String ndkHome = Prefs.getNdkPath();
+    //库名称
+    public static final String NMMP_NAME = "nmmp";
+
+    //
+    //虚拟机库名称,如果cmake里配置为静态库,这个可以忽略
+    public static final String VM_NAME = "nmmvm";
+
+    public static Map<String, Map<File, File>> generateNativeLibs(@Nonnull File outDir,
+                                                                  @Nonnull final List<String> abis) throws IOException {
+        String cmakePath = System.getenv("CMAKE_PATH");
+        if (isEmpty(cmakePath)) {
+            System.err.println("No CMAKE_PATH");
+            cmakePath = Prefs.getCmakePath();
+        }
+        String sdkHome = System.getenv("ANDROID_SDK_HOME");
+        if (isEmpty(sdkHome)) {
+            sdkHome = Prefs.getSdkPath();
+            System.err.println("No ANDROID_SDK_HOME. Default is " + sdkHome);
+        }
+        String ndkHome = System.getenv("ANDROID_NDK_HOME");
+        if (isEmpty(ndkHome)) {
+            ndkHome = Prefs.getNdkPath();
+            System.err.println("No ANDROID_NDK_HOME. Default is " + ndkHome);
+        }
+
 
         final Map<String, Map<File, File>> allLibs = new HashMap<>();
 
@@ -31,7 +49,7 @@ public class BuildNativeLib {
                     abi);
 
             //删除上次创建的目录
-            FileHelper.deleteFile(new File(cmakeOptions.getBuildPath()));
+            FileUtils.deleteFile(new File(cmakeOptions.getBuildPath()));
 
             final Map<File, File> files = BuildNativeLib.build(cmakeOptions);
             allLibs.put(abi, files);
@@ -40,12 +58,12 @@ public class BuildNativeLib {
     }
 
     private static boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
+        return s == null || "".equals(s);
     }
 
 
     //编译出native lib，同时返回最后的so文件
-    public static @NotNull Map<File, File> build(@NotNull CMakeOptions options) throws IOException {
+    public static Map<File, File> build(@NotNull CMakeOptions options) throws IOException {
 
         final List<String> cmakeArguments = options.getCmakeArguments();
         //cmake
@@ -75,12 +93,7 @@ public class BuildNativeLib {
     }
 
     private static void execCmd(List<String> cmds) throws IOException {
-        final VmpLogger logger = vmpLogger;
-        if (logger != null) {
-            logger.info(String.valueOf(cmds));
-        } else {
-            System.out.println(cmds);
-        }
+        System.out.println(cmds);
         final ProcessBuilder builder = new ProcessBuilder()
                 .command(cmds);
 
@@ -92,11 +105,7 @@ public class BuildNativeLib {
         try {
             final int exitStatus = process.waitFor();
             if (exitStatus != 0) {
-                if (logger != null) {
-                    logger.error(String.format("Cmd '%s' exec failed", cmds.toString()));
-                } else {
-                    throw new IOException(String.format("Cmd '%s' exec failed", cmds.toString()));
-                }
+                throw new IOException(String.format("Cmd '%s' exec failed", cmds.toString()));
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -106,13 +115,8 @@ public class BuildNativeLib {
     private static void printOutput(InputStream inputStream) throws IOException {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String line;
-        final VmpLogger logger = vmpLogger;
         while ((line = reader.readLine()) != null) {
-            if (logger != null) {
-                logger.info(line);
-            } else {
-                System.out.println(line);
-            }
+            System.out.println(line);
         }
     }
 
@@ -176,12 +180,12 @@ public class BuildNativeLib {
             return abi;
         }
 
-        @NotNull
+        @Nonnull
         public String getLibStripOutputDir() {
             return new File(new File(getProjectHome(), "obj/strip"), abi).getAbsolutePath();
         }
 
-        @NotNull
+        @Nonnull
         public String getLibSymOutputDir() {
             return new File(new File(getProjectHome(), "obj/sym"), abi).getAbsolutePath();
         }
@@ -226,7 +230,7 @@ public class BuildNativeLib {
         }
 
         //未strip的so跟strip之后的so，
-        @NotNull
+        @Nonnull
         public Map<File, File> getSharedObjectFileMap() {
             final HashMap<File, File> map = new HashMap<>();
             final String libSymOutputDir = getLibSymOutputDir();
@@ -234,36 +238,27 @@ public class BuildNativeLib {
             final File stripOutputDir = new File(getLibStripOutputDir());
             if (!stripOutputDir.exists()) stripOutputDir.mkdirs();
 
-            final String vm = "lib" + Prefs.getVmName() + ".so";
+            final String vm = "lib" + VM_NAME + ".so";
 
             File vmFile = new File(libSymOutputDir, vm);
             if (!vmFile.exists()) {
                 //windows
                 vmFile = new File(getBuildPath(), "vm/" + vm);
             }
-            final VmpLogger logger = vmpLogger;
             if (!vmFile.exists()) {
-                if (logger != null) {
-                    logger.warning("Not Found so: " + vmFile.getAbsolutePath());
-                } else {
-                    throw new RuntimeException("Not Found so: " + vmFile.getAbsolutePath());
-                }
+                throw new RuntimeException("Not Found so: " + vmFile.getAbsolutePath());
             }
 
             map.put(vmFile, new File(stripOutputDir, vm));
 
-            final String vmp = "lib" + Prefs.getNmmpName() + ".so";
+            final String vmp = "lib" + NMMP_NAME + ".so";
             File vmpFile = new File(libSymOutputDir, vmp);
             if (!vmpFile.exists()) {
                 //windows
                 vmpFile = new File(getBuildPath(), vmp);
             }
             if (!vmpFile.exists()) {
-                if (logger != null) {
-                    logger.warning("Not Found so: " + vmpFile.getAbsolutePath());
-                } else {
-                    throw new RuntimeException("Not Found so: " + vmpFile.getAbsolutePath());
-                }
+                throw new RuntimeException("Not Found so: " + vmpFile.getAbsolutePath());
             }
             map.put(vmpFile, new File(stripOutputDir, vmp));
 

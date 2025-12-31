@@ -1,18 +1,18 @@
 package com.nmmedit.apkprotect.aar.asm;
 
-import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class AsmUtils {
 
     //生成NativeUtils类, 用于实现lib加载及类初始化
-    public static byte[] genCfNativeUtil(@NotNull String clsName,
-                                         @NotNull String libName,
-                                         @NotNull List<String> initMethodNames) {
+    public static byte[] genCfNativeUtil(@Nonnull String clsName,
+                                         @Nonnull String libName,
+                                         @Nonnull List<String> initMethodNames) {
         final ClassWriter cw = new ClassWriter(0);
 
         cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL,
@@ -48,4 +48,5 @@ public class AsmUtils {
 
         return cw.toByteArray();
     }
+
 }

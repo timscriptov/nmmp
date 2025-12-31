@@ -1,10 +1,9 @@
 package com.nmmedit.apkprotect.dex2c.filters;
 
 import com.google.common.collect.HashMultimap;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -31,27 +30,9 @@ import java.util.Set;
  */
 public class SimpleRules {
     private final HashMultimap<ClassRule, MethodRule> convertRules = HashMultimap.create();
-    private Set<MethodRule> methodRules;
+
 
     public SimpleRules() {
-    }
-
-    @Contract(pure = true)
-    private static @NotNull String classNameToType(@NotNull String className) {
-        return "L" + className.replace('.', '/') + ";";
-    }
-
-    @NotNull
-    private static String toRegex(@NotNull String s) {
-        final StringBuilder sb = new StringBuilder(s.length() + 3);
-        for (int i = 0; i < s.length(); i++) {
-            final char c = s.charAt(i);
-            if (c == '*') {
-                sb.append('.');
-            }
-            sb.append(c);
-        }
-        return sb.toString();
     }
 
     public void parse(Reader ruleReader) throws IOException {
@@ -63,7 +44,7 @@ public class SimpleRules {
             String line;
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty()) {//empty line
+                if ("".equals(line)) {//empty line
                     lineNumb++;
                     continue;
                 }
@@ -131,7 +112,9 @@ public class SimpleRules {
         }
     }
 
-    public boolean matchClass(@NotNull String classType, @Nullable String supperType, @NotNull List<String> ifacTypes) {
+    private Set<MethodRule> methodRules;
+
+    public boolean matchClass(@Nonnull String classType, @Nullable String supperType, @Nonnull List<String> ifacTypes) {
         for (ClassRule rule : convertRules.keySet()) {
             final String typeRegex = toRegex(classNameToType(rule.className));
             if (classType.matches(typeRegex)) {// match classType
@@ -174,21 +157,40 @@ public class SimpleRules {
         return false;
     }
 
+    private static String classNameToType(String className) {
+        return "L" + className.replace('.', '/') + ";";
+    }
+
+    @Nonnull
+    private static String toRegex(String s) {
+        final StringBuilder sb = new StringBuilder(s.length() + 3);
+        for (int i = 0; i < s.length(); i++) {
+            final char c = s.charAt(i);
+            switch (c) {
+                case '*':
+                    sb.append('.');
+                default:
+                    sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
     private static class ClassRule {
-        @NotNull
+        @Nonnull
         private final String className;
         //supper class
-        @NotNull
+        @Nonnull
         private final String supperName;
         //interface
-        @NotNull
+        @Nonnull
         private final String interfaceName;
 
-        public ClassRule(@NotNull String className) {
+        public ClassRule(@Nonnull String className) {
             this(className, "", "");
         }
 
-        public ClassRule(@NotNull String className, @NotNull String supperName, @NotNull String interfaceName) {
+        public ClassRule(@Nonnull String className, @Nonnull String supperName, @Nonnull String interfaceName) {
             this.className = className;
             this.supperName = supperName;
             this.interfaceName = interfaceName;
@@ -216,12 +218,12 @@ public class SimpleRules {
     }
 
     private static class MethodRule {
-        @NotNull
+        @Nonnull
         private final String methodName;
         // args ?
         // private final List<String> args;
 
-        public MethodRule(@NotNull String methodName) {
+        public MethodRule(@Nonnull String methodName) {
             this.methodName = methodName;
         }
     }

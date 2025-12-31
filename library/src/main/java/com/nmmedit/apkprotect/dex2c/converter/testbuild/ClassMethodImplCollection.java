@@ -3,9 +3,9 @@ package com.nmmedit.apkprotect.dex2c.converter.testbuild;
 import com.android.tools.smali.dexlib2.iface.*;
 import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.nmmedit.apkprotect.dex2c.converter.MyMethodUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -24,14 +24,14 @@ public class ClassMethodImplCollection implements ClassDef {
         this.codeContent = sb;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public String getType() {
         return classDef.getType();
     }
 
     @Override
-    public int compareTo(@NotNull CharSequence o) {
+    public int compareTo(@Nonnull CharSequence o) {
         return classDef.compareTo(o);
     }
 
@@ -46,7 +46,7 @@ public class ClassMethodImplCollection implements ClassDef {
         return classDef.getSuperclass();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public List<String> getInterfaces() {
         return classDef.getInterfaces();
@@ -59,52 +59,52 @@ public class ClassMethodImplCollection implements ClassDef {
         return null;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Set<? extends Annotation> getAnnotations() {
         return classDef.getAnnotations();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getStaticFields() {
         return classDef.getStaticFields();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getInstanceFields() {
         return classDef.getInstanceFields();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getFields() {
         return classDef.getFields();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getDirectMethods() {
         Iterable<? extends Method> directMethods = classDef.getDirectMethods();
         return convertMethods(directMethods);
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getVirtualMethods() {
         Iterable<? extends Method> virtualMethods = classDef.getVirtualMethods();
         return convertMethods(virtualMethods);
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getMethods() {
         Iterable<? extends Method> methods = classDef.getMethods();
         return convertMethods(methods);
     }
 
-    private @NotNull Iterable<? extends Method> convertMethods(@NotNull Iterable<? extends Method> methods) {
+    private Iterable<? extends Method> convertMethods(Iterable<? extends Method> methods) {
         ArrayList<Method> newMethods = new ArrayList<>();
         for (Method method : methods) {
             if (MyMethodUtil.isConstructorOrAbstract(method)) {
@@ -116,7 +116,7 @@ public class ClassMethodImplCollection implements ClassDef {
         return newMethods;
     }
 
-    private void methodToC(@NotNull Method method) {
+    private void methodToC(Method method) {
         MethodImplementation implementation = method.getImplementation();
         if (implementation == null) {
             return;
@@ -142,7 +142,7 @@ public class ClassMethodImplCollection implements ClassDef {
     }
 
     @Override
-    public @NotNull CharSequence subSequence(int start, int end) {
+    public CharSequence subSequence(int start, int end) {
         return classDef.subSequence(start, end);
     }
 
@@ -151,7 +151,7 @@ public class ClassMethodImplCollection implements ClassDef {
         classDef.validateReference();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public String toString() {
         return classDef.toString();

@@ -2,10 +2,9 @@ package com.nmmedit.apkprotect.dex2c;
 
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.google.common.collect.HashMultimap;
-import com.nmmedit.apkprotect.data.Prefs;
 import com.nmmedit.apkprotect.dex2c.converter.JniCodeGenerator;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,7 @@ public class DexConfig {
     private Set<String> handledNativeClasses;
     private Map<String, Integer> nativeMethodOffsets;
 
-    public DexConfig(File outputDir, @NotNull String dexFileName) {
+    public DexConfig(File outputDir, String dexFileName) {
         this.outputDir = outputDir;
         int i = dexFileName.lastIndexOf('.');
         if (i != -1) {
@@ -46,14 +45,14 @@ public class DexConfig {
 
     //每个处理过的class,需要调用这个类里的注册函数,注册函数名和classes.dex相关
     public String getRegisterNativesClassName() {
-        return Prefs.getRegisterNativesClassName();
+        return "com/nmmedit/protect/NativeUtil";
     }
 
     public String getRegisterNativesMethodName() {
         return getDexName() + "Init0";
     }
 
-    @NotNull
+    @Nonnull
     public Set<String> getHandledNativeClasses() {
         return handledNativeClasses;
     }
@@ -62,17 +61,18 @@ public class DexConfig {
         return nativeMethodOffsets.get(className);
     }
 
-    public void setResult(@NotNull JniCodeGenerator codeGenerator) {
+    public void setResult(JniCodeGenerator codeGenerator) {
         handledNativeClasses = codeGenerator.getHandledNativeClasses();
         nativeMethodOffsets = codeGenerator.getNativeMethodOffsets();
     }
 
-    public HashMultimap<String, List<? extends Method>> getShellMethods() {
-        return shellMethods;
-    }
 
     public void setShellMethods(HashMultimap<String, List<? extends Method>> shellMethods) {
         this.shellMethods = shellMethods;
+    }
+
+    public HashMultimap<String, List<? extends Method>> getShellMethods() {
+        return shellMethods;
     }
 
     /**

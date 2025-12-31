@@ -5,11 +5,9 @@ import com.android.tools.smali.dexlib2.HiddenApiRestriction;
 import com.android.tools.smali.dexlib2.base.reference.BaseMethodReference;
 import com.android.tools.smali.dexlib2.base.reference.BaseTypeReference;
 import com.android.tools.smali.dexlib2.iface.*;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,26 +16,26 @@ import java.util.Set;
 /**
  * 每个类调用的静态初始化方法,一般情况一个classes.dex对应一个注册方法
  * 需要把它放在主classes.dex里
- * <p>
+ *
  * 静态初始化方法里增加加载本地库代码
  */
 public class RegisterNativesUtilClassDef extends BaseTypeReference implements ClassDef {
-    @NotNull
+    @Nonnull
     private final String type;
-    @NotNull
+    @Nonnull
     private final List<String> nativeMethodNames;
 
     private final String libName;
 
-    public RegisterNativesUtilClassDef(@NotNull String type,
-                                       @NotNull List<String> nativeMethodNames,
-                                       @NotNull String libName) {
+    public RegisterNativesUtilClassDef(@Nonnull String type,
+                                       @Nonnull List<String> nativeMethodNames,
+                                       @Nonnull String libName) {
         this.type = type;
         this.nativeMethodNames = nativeMethodNames;
         this.libName = libName;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public String getType() {
         return type;
@@ -55,7 +53,7 @@ public class RegisterNativesUtilClassDef extends BaseTypeReference implements Cl
         return "Ljava/lang/Object;";
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public List<String> getInterfaces() {
         return Collections.emptyList();
@@ -67,31 +65,31 @@ public class RegisterNativesUtilClassDef extends BaseTypeReference implements Cl
         return null;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Set<? extends Annotation> getAnnotations() {
         return Collections.emptySet();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getStaticFields() {
         return Collections.emptyList();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getInstanceFields() {
         return Collections.emptyList();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getFields() {
         return Collections.emptyList();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getDirectMethods() {
         final ArrayList<Method> methods = new ArrayList<>();
@@ -105,35 +103,35 @@ public class RegisterNativesUtilClassDef extends BaseTypeReference implements Cl
         return methods;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getVirtualMethods() {
         return Collections.emptyList();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getMethods() {
         //virtualMethods为空,总方法只需要返回directMethods就行
         return getDirectMethods();
     }
 
+
     private static class NativeMethod extends BaseMethodReference implements Method {
 
-        @NotNull
+        @Nonnull
         private final String type;
 
         private final String methodName;
 
-        public NativeMethod(@NotNull String type, String methodName) {
+        public NativeMethod(@Nonnull String type, String methodName) {
             this.type = type;
             this.methodName = methodName;
         }
 
-        @Contract(pure = true)
-        @NotNull
+        @Nonnull
         @Override
-        public @Unmodifiable List<? extends MethodParameter> getParameters() {
+        public List<? extends MethodParameter> getParameters() {
             return Collections.emptyList();
         }
 
@@ -144,49 +142,46 @@ public class RegisterNativesUtilClassDef extends BaseTypeReference implements Cl
                     | AccessFlags.PUBLIC.getValue();
         }
 
-        @Contract(pure = true)
-        @NotNull
+        @Nonnull
         @Override
-        public @Unmodifiable Set<? extends Annotation> getAnnotations() {
+        public Set<? extends Annotation> getAnnotations() {
             return Collections.emptySet();
         }
 
-        @Contract(pure = true)
-        @NotNull
+        @Nonnull
         @Override
-        public @Unmodifiable Set<HiddenApiRestriction> getHiddenApiRestrictions() {
+        public Set<HiddenApiRestriction> getHiddenApiRestrictions() {
             return Collections.emptySet();
         }
 
-        @Contract(pure = true)
         @Override
-        public @Nullable MethodImplementation getImplementation() {
+        public MethodImplementation getImplementation() {
             return null;
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public String getDefiningClass() {
             return type;
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public String getName() {
             return methodName;
         }
 
-        @Contract(value = " -> new", pure = true)
-        @NotNull
+        @Nonnull
         @Override
-        public @Unmodifiable List<? extends CharSequence> getParameterTypes() {
+        public List<? extends CharSequence> getParameterTypes() {
             return Collections.singletonList("I");
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public String getReturnType() {
             return "V";
         }
     }
+
 }

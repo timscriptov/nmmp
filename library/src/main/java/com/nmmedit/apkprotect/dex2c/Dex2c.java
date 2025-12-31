@@ -1,6 +1,5 @@
 package com.nmmedit.apkprotect.dex2c;
 
-import com.android.tools.smali.dexlib2.Opcodes;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
 import com.android.tools.smali.dexlib2.iface.ClassDef;
 import com.android.tools.smali.dexlib2.iface.Method;
@@ -16,8 +15,8 @@ import com.nmmedit.apkprotect.dex2c.converter.structs.MyClassDef;
 import com.nmmedit.apkprotect.dex2c.converter.structs.RegisterNativesCallerClassDef;
 import com.nmmedit.apkprotect.dex2c.filters.ClassAndMethodFilter;
 import com.nmmedit.apkprotect.util.Pair;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,11 +37,11 @@ public class Dex2c {
      * @return 输出结果配置
      * @throws IOException
      */
-    public static @NotNull GlobalDexConfig handleAllDex(@NotNull List<File> dexFiles,
-                                                        @NotNull ClassAndMethodFilter filter,
-                                                        @NotNull InstructionRewriter instructionRewriter,
-                                                        @NotNull ClassAnalyzer classAnalyzer,
-                                                        @NotNull File outDir) throws IOException {
+    public static GlobalDexConfig handleAllDex(@Nonnull List<File> dexFiles,
+                                               @Nonnull ClassAndMethodFilter filter,
+                                               @Nonnull InstructionRewriter instructionRewriter,
+                                               @Nonnull ClassAnalyzer classAnalyzer,
+                                               @Nonnull File outDir) throws IOException {
         if (!outDir.exists()) outDir.mkdirs();
         final GlobalDexConfig globalConfig = new GlobalDexConfig(outDir);
 
@@ -61,11 +60,11 @@ public class Dex2c {
     /**
      * 处理单个dex文件
      */
-    public static @NotNull DexConfig handleDex(@NotNull File dexFile,
-                                               @NotNull ClassAndMethodFilter filter,
-                                               @NotNull ClassAnalyzer classAnalyzer,
-                                               @NotNull InstructionRewriter instructionRewriter,
-                                               @NotNull File outDir) throws IOException {
+    public static DexConfig handleDex(@Nonnull File dexFile,
+                                      @Nonnull ClassAndMethodFilter filter,
+                                      @Nonnull ClassAnalyzer classAnalyzer,
+                                      @Nonnull InstructionRewriter instructionRewriter,
+                                      @Nonnull File outDir) throws IOException {
         return handleDex(new BufferedInputStream(new FileInputStream(dexFile)),
                 dexFile.getName(),
                 filter,
@@ -74,11 +73,11 @@ public class Dex2c {
                 outDir);
     }
 
-    public static @NotNull DexConfig handleModuleDex(@NotNull File dexFile,
-                                                     @NotNull ClassAndMethodFilter filter,
-                                                     @NotNull ClassAnalyzer classAnalyzer,
-                                                     @NotNull InstructionRewriter instructionRewriter,
-                                                     @NotNull File outDir) throws IOException {
+    public static DexConfig handleModuleDex(@Nonnull File dexFile,
+                                            @Nonnull ClassAndMethodFilter filter,
+                                            @Nonnull ClassAnalyzer classAnalyzer,
+                                            @Nonnull InstructionRewriter instructionRewriter,
+                                            @Nonnull File outDir) throws IOException {
         final GlobalDexConfig globalDexConfig = new GlobalDexConfig(outDir);
         final DexConfig dexConfig = handleDex(dexFile, filter, classAnalyzer, instructionRewriter, outDir);
         globalDexConfig.addDexConfig(dexConfig);
@@ -90,17 +89,17 @@ public class Dex2c {
     /**
      * 处理单个dex流
      */
-    public static @NotNull DexConfig handleDex(@NotNull InputStream dex,
-                                               @NotNull String dexFileName,
-                                               @NotNull ClassAndMethodFilter filter,
-                                               @NotNull ClassAnalyzer classAnalyzer,
-                                               @NotNull InstructionRewriter instructionRewriter,
-                                               @NotNull File outDir) throws IOException {
+    public static DexConfig handleDex(@Nonnull InputStream dex,
+                                      @Nonnull String dexFileName,
+                                      @Nonnull ClassAndMethodFilter filter,
+                                      @Nonnull ClassAnalyzer classAnalyzer,
+                                      @Nonnull InstructionRewriter instructionRewriter,
+                                      @Nonnull File outDir) throws IOException {
         if (!outDir.exists()) outDir.mkdirs();
         DexConfig config = splitDex(dex, dexFileName, filter, classAnalyzer, outDir);
 
 
-        final DexBackedDexFile nativeImplDexFile = DexBackedDexFile.fromInputStream(Opcodes.getDefault(),
+        final DexBackedDexFile nativeImplDexFile = DexBackedDexFile.fromInputStream(null,
                 new BufferedInputStream(new FileInputStream(config.getImplDexFile())));
 
         //根据符号dex生成c代码
@@ -123,19 +122,20 @@ public class Dex2c {
     }
 
     //分割dex产生两个dex,一个为壳dex,一个为实现dex,壳dex将会打包进apk,实现dex会被转换为c代码
-    private static @NotNull DexConfig splitDex(@NotNull InputStream dex,
-                                               @NotNull String dexFileName,
-                                               @NotNull ClassAndMethodFilter filter,
-                                               @NotNull ClassAnalyzer classAnalyzer,
-                                               @NotNull File outDir) throws IOException {
+    @Nonnull
+    private static DexConfig splitDex(@Nonnull InputStream dex,
+                                      @Nonnull String dexFileName,
+                                      @Nonnull ClassAndMethodFilter filter,
+                                      @Nonnull ClassAnalyzer classAnalyzer,
+                                      @Nonnull File outDir) throws IOException {
         DexBackedDexFile originDexFile = DexBackedDexFile.fromInputStream(
-                Opcodes.getDefault(),
+                null,
                 dex);
 
         //把方法变为本地方法,用它替换掉原本的dex
-        DexPool shellDexPool = new DexPool(Opcodes.getDefault());
+        DexPool shellDexPool = new DexPool(originDexFile.getOpcodes());
 
-        DexPool nativeImplDexPool = new DexPool(Opcodes.getDefault());
+        DexPool nativeImplDexPool = new DexPool(originDexFile.getOpcodes());
 
         final MethodConverter methodConverter = new MethodConverter(classAnalyzer);
 
@@ -193,7 +193,7 @@ public class Dex2c {
 
     private static void addMethods(List<Method> directMethods,
                                    List<Method> virtualMethods,
-                                   @NotNull List<? extends Method> methods) {
+                                   List<? extends Method> methods) {
         for (Method method : methods) {
             addMethod(directMethods, virtualMethods, method);
         }
@@ -210,13 +210,13 @@ public class Dex2c {
     }
 
     //在处理过的class的static{}块最前面添加注册本地方法代码,如果不存在static{}块则新增<clinit>方法
-    public static @NotNull List<DexPool> injectCallRegisterNativeInsns(@NotNull DexConfig config,
-                                                                       DexPool lastDexPool,
-                                                                       Set<String> mainClassSet,
-                                                                       int maxPoolSize) throws IOException {
+    public static List<DexPool> injectCallRegisterNativeInsns(DexConfig config,
+                                                              DexPool lastDexPool,
+                                                              Set<String> mainClassSet,
+                                                              int maxPoolSize) throws IOException {
 
         DexBackedDexFile dexNativeFile = DexBackedDexFile.fromInputStream(
-                Opcodes.getDefault(),
+                null,
                 new BufferedInputStream(new FileInputStream(config.getShellDexFile())));
 
         List<DexPool> dexPools = new ArrayList<>();
@@ -230,14 +230,14 @@ public class Dex2c {
             internClass(config, lastDexPool, classDef);
 
             if (lastDexPool.hasOverflowed(maxPoolSize)) {
-                lastDexPool = new DexPool(Opcodes.getDefault());
+                lastDexPool = new DexPool(dexNativeFile.getOpcodes());
                 dexPools.add(lastDexPool);
             }
         }
         return dexPools;
     }
 
-    private static void internClass(@NotNull DexConfig config, DexPool dexPool, @NotNull ClassDef classDef) {
+    private static void internClass(DexConfig config, DexPool dexPool, ClassDef classDef) {
         final Set<String> classes = config.getHandledNativeClasses();
         final String type = classDef.getType();
         final String className = type.substring(1, type.length() - 1);
@@ -252,4 +252,5 @@ public class Dex2c {
             dexPool.internClass(classDef);
         }
     }
+
 }

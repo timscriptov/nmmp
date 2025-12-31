@@ -1,9 +1,10 @@
 package com.nmmedit.apkprotect.util;
 
-import com.nmmedit.apkprotect.data.Prefs;
+import com.nmmedit.apkprotect.BuildNativeLib;
 import com.nmmedit.apkprotect.dex2c.converter.instructionrewriter.InstructionRewriter;
 import com.nmmedit.apkprotect.sign.ApkVerifyCodeGenerator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 public class CmakeUtils {
 
     //根据指令重写规则,重新生成新的opcode
-    public static void writeOpcodeHeaderFile(File source, @NotNull InstructionRewriter instructionRewriter) throws IOException {
+    public static void writeOpcodeHeaderFile(@NotNull File source, @NotNull InstructionRewriter instructionRewriter) throws IOException {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(source), StandardCharsets.UTF_8));
 
@@ -34,7 +35,7 @@ public class CmakeUtils {
 
         //根据opcode生成goto表
         final Pattern patternGotoTable = Pattern.compile(
-                "_name\\[kNumPackedOpcodes] = \\{.*?};",
+                "_name\\[kNumPackedOpcodes\\] = \\{.*?};",
                 Pattern.MULTILINE | Pattern.DOTALL);
         headerContent = patternGotoTable
                 .matcher(headerContent)
@@ -46,7 +47,7 @@ public class CmakeUtils {
     }
 
     //读取证书信息,并把公钥写入签名验证文件里,运行时对apk进行签名校验
-    private static void writeApkVerifierFile(String packageName, File source, ApkVerifyCodeGenerator apkVerifyCodeGenerator) throws IOException {
+    private static void writeApkVerifierFile(@NotNull String packageName, @NotNull File source, @Nullable ApkVerifyCodeGenerator apkVerifyCodeGenerator) throws IOException {
         if (apkVerifyCodeGenerator == null) {
             return;
         }
@@ -64,7 +65,7 @@ public class CmakeUtils {
         }
     }
 
-    public static void writeCmakeFile(File cmakeTemp, String libNmmpName, String libVmName, String cxxFlags) throws IOException {
+    public static void writeCmakeFile(@NotNull File cmakeTemp, @NotNull String libName) throws IOException {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(cmakeTemp), StandardCharsets.UTF_8));
 
@@ -73,19 +74,15 @@ public class CmakeUtils {
         String libNameFormat = "set\\(LIBNAME_PLACEHOLDER \"%s\"\\)";
 
         //替换原本libname
-        lines = lines.replaceAll(String.format(libNameFormat, "nmmp"), String.format(libNameFormat, libNmmpName));
+        lines = lines.replaceAll(String.format(libNameFormat, "nmmp"), String.format(libNameFormat, libName));
 
-        libNameFormat = "set\\(LIBNMMVM_NAME \"%s\" CACHE INTERNAL \"lib %s name\"\\)";
-        lines = lines.replaceAll(String.format(libNameFormat, "nmmvm", "nmmvm"), String.format(libNameFormat, libVmName, libVmName));
-
-        //额外FLAGS
-        lines = lines.replaceAll("-fvisibility=hidden", "-fvisibility=hidden " + cxxFlags);
-
-        FileHelper.writeToFile(cmakeTemp, lines);
+        try (FileWriter fileWriter = new FileWriter(cmakeTemp)) {
+            fileWriter.write(lines);
+        }
     }
 
 
-    public static void generateCSources(File srcDir, InstructionRewriter instructionRewriter) throws IOException {
+    public static void generateCSources(@NotNull File srcDir, @NotNull InstructionRewriter instructionRewriter) throws IOException {
         final File vmsrcFile = new File(FileUtils.getHomePath(), "tools/vmsrc.zip");
         if (!vmsrcFile.exists()) {
             //警告：如果外部源码存在不会复制内部vmsrc.zip出去，需要删除外部源码文件才能保证vmsrc.zip正确更新
@@ -95,7 +92,7 @@ public class CmakeUtils {
                     InputStream inputStream = CmakeUtils.class.getResourceAsStream("/vmsrc.zip");
                     final FileOutputStream outputStream = new FileOutputStream(vmsrcFile);
             ) {
-                FileHelper.copyStream(inputStream, outputStream);
+                FileUtils.copyStream(inputStream, outputStream);
             }
         }
         final List<File> cSources = ApkUtils.extractFiles(vmsrcFile, ".*", srcDir);
@@ -107,7 +104,7 @@ public class CmakeUtils {
                 writeOpcodeHeaderFile(source, instructionRewriter);
             } else if (source.getName().equals("CMakeLists.txt")) {
                 //处理cmake里配置的本地库名
-                writeCmakeFile(source, Prefs.getNmmpName(), Prefs.getVmName(), Prefs.getCxxFlags());
+                writeCmakeFile(source, BuildNativeLib.NMMP_NAME);
             } else if (source.getName().endsWith("vm.h")) {
                 writeRandomResolver(source);
             } else if (source.getName().endsWith("JNIWrapper.h")) {
@@ -116,7 +113,7 @@ public class CmakeUtils {
         }
     }
 
-    private static void writeRandomResolver(File source) throws IOException {
+    private static void writeRandomResolver(@NotNull File source) throws IOException {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(source), StandardCharsets.UTF_8));
         String lines = bufferedReader.lines().collect(Collectors.joining("\n"));
@@ -142,7 +139,7 @@ public class CmakeUtils {
         }
     }
 
-    private static void writeRandomJNIWrapper(File file) throws IOException {
+    private static void writeRandomJNIWrapper(@NotNull File file) throws IOException {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(file), StandardCharsets.UTF_8));
         String lines = bufferedReader.lines().collect(Collectors.joining("\n"));
@@ -157,6 +154,8 @@ public class CmakeUtils {
             while (matcher.find()) {
                 funcs.add(matcher.group(1));
             }
+
+
             try (FileWriter fileWriter = new FileWriter(file)) {
                 final String doc = matcherWrapper.replaceAll("typedef struct {\n" +
                         randomList(funcs) +

@@ -4,8 +4,8 @@ import com.android.aapt.Resources;
 import com.android.bundle.Config;
 import com.android.bundle.Files;
 import com.android.bundle.Targeting;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -24,7 +24,8 @@ public class ProtoUtils {
          * @return
          * @throws IOException
          */
-        public static byte @NotNull [] editConfig(byte @NotNull [] configBytes) throws IOException {
+        @Nonnull
+        public static byte[] editConfig(byte[] configBytes) throws IOException {
             final Config.BundleConfig.Builder configBuilder = Config.BundleConfig.parseFrom(configBytes).toBuilder();
             final Config.Optimizations.Builder optimizationsBuilder = configBuilder.getOptimizationsBuilder();
 
@@ -44,7 +45,9 @@ public class ProtoUtils {
      * .aab内的AndroidManifest.xml是protobuf生成的二进制文件
      */
     public static class AndroidManifest {
-        public static @NotNull String getPackageName(byte @NotNull [] manifestBytes) throws IOException {
+
+        @Nonnull
+        public static String getPackageName(@Nonnull byte[] manifestBytes) throws IOException {
             final Resources.XmlNode xmlNode = Resources.XmlNode.parseFrom(manifestBytes);
             final Resources.XmlElement element = xmlNode.getElement();
             if (!"manifest".equals(element.getName())) {
@@ -67,7 +70,8 @@ public class ProtoUtils {
          * @return
          * @throws IOException
          */
-        public static byte @NotNull [] editAndroidManifest(byte @NotNull [] manifestBytes) throws IOException {
+        @Nonnull
+        public static byte[] editAndroidManifest(@Nonnull byte[] manifestBytes) throws IOException {
             final Resources.XmlNode.Builder rootNodeBuilder = Resources.XmlNode.parseFrom(manifestBytes).toBuilder();
 
             final Resources.XmlElement.Builder elementBuilder = rootNodeBuilder.getElementBuilder();
@@ -106,7 +110,7 @@ public class ProtoUtils {
      */
     public static class NativeLibraries {
 
-        private static Files.@NotNull NativeLibraries genNativeLibsProtoBuf(@NotNull List<String> abis) {
+        private static Files.NativeLibraries genNativeLibsProtoBuf(@Nonnull List<String> abis) {
 
             final Files.NativeLibraries.Builder nativeLibsBuilder = Files.NativeLibraries.newBuilder();
 
@@ -131,7 +135,7 @@ public class ProtoUtils {
             return nativeLibsBuilder.build();
         }
 
-        public static void writeNativePB(@NotNull List<String> abis, @NotNull OutputStream out) throws IOException {
+        public static void writeNativePB(@Nonnull List<String> abis, @Nonnull OutputStream out) throws IOException {
             final Files.NativeLibraries nativeLibraries = genNativeLibsProtoBuf(abis);
             nativeLibraries.writeTo(out);
         }

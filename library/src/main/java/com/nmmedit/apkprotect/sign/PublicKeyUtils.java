@@ -1,7 +1,5 @@
 package com.nmmedit.apkprotect.sign;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.PublicKey;
@@ -9,11 +7,11 @@ import java.security.cert.Certificate;
 import java.util.Enumeration;
 
 public class PublicKeyUtils {
-    public static byte @Nullable [] getPublicKey(String keyStorePath, String alias, String password) {
+    public static byte[] getPublicKey(String keyStorePath, String alias, String password) {
         try {
             final KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(new FileInputStream(keyStorePath), password.toCharArray());
-            if (alias == null || alias.isEmpty()) {
+            if (alias == null || "".equals(alias)) {
                 final Enumeration<String> aliases = ks.aliases();
                 if (aliases == null) {
                     return null;

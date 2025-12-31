@@ -5,50 +5,40 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.util.MethodUtil;
 import com.nmmedit.apkprotect.util.ModifiedUtf8;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * 根据dex生成符号解析代码,比如字符串常量池,类型常量池这些
  */
 
 public class ResolverCodeGenerator {
+
+
     private final References references;
 
     public ResolverCodeGenerator(DexBackedDexFile dexFile,
-                                 @NotNull ClassAnalyzer analyzer
+                                 @Nonnull ClassAnalyzer analyzer
     ) {
 
         references = new References(dexFile, analyzer);
-    }
-
-    static @NotNull String stringEsc(String str) throws UTFDataFormatException {
-        byte[] bytes = ModifiedUtf8.encode(str);
-        StringBuilder sb = new StringBuilder(4 * bytes.length);
-        for (byte b : bytes) {
-            sb.append(String.format("\\x%02x", b & 0xFF));
-        }
-        return sb.toString();
     }
 
     public References getReferences() {
         return references;
     }
 
-    public void generate(@NotNull Writer writer) throws IOException {
+    public void generate(Writer writer) throws IOException {
         writer.write("#include \"GlobalCache.h\"\n");
         writer.write("#include \"ConstantPool.h\"\n\n");
         writer.write("#include <pthread.h>\n\n\n");
 
-        byte[] keys = generateStringKeys();
-
-        generateStringPool(writer, keys);
+        generateStringPool(writer);
         generateTypePool(writer);
 
         //额外添加的,方便生成结构体
@@ -62,11 +52,7 @@ public class ResolverCodeGenerator {
         generateStringConstants(writer);
 
         //生成初始化函数及符号解析器结构体
-        generateResolver(writer, keys);
-    }
-
-    private byte[] generateStringKeys() throws UTFDataFormatException {
-        return ModifiedUtf8.encode(UUID.randomUUID().toString());
+        generateResolver(writer);
     }
 
     //产生const-string*指令对应的缓存
@@ -97,13 +83,7 @@ public class ResolverCodeGenerator {
         writer.write(String.format("static jstring gStringConstants[%d];\n\n", constStringIds.length));
     }
 
-    private void generateResolver(@NotNull Writer writer, byte[] keys) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (byte k : keys) {
-            stringBuilder.append(String.format("0x%02x,", k & 0xFF));
-        }
-        String generatedKey = stringBuilder.toString();
-
+    private void generateResolver(Writer writer) throws IOException {
         writer.write("static void resolver_init(JNIEnv *env) {\n" +
                 "    if(sizeof(gFields) == 0) return;\n" +
                 "    if(sizeof(gMethods) == 0) return;\n" +
@@ -113,25 +93,7 @@ public class ResolverCodeGenerator {
                 "    memset(gStringConstants, 0, sizeof(gStringConstants));\n" +
                 "}\n" +
                 "\n" +
-                "static int gDecrypted = 0;\n" +
-                "\n" +
-                "static const char* STRING_BY_ID(int _idx) {\n" +
-                "    if (!gDecrypted) {\n" +
-                "        gDecrypted = 1;\n" +
-                "\n" +
-                "        u1 keys[] = {" + generatedKey + "};\n" +
-                "        int size_of_keys = sizeof(keys);\n" +
-                "\n" +
-                "        int i = 0;\n" +
-                "        int key_index = 0;\n" +
-                "        for (i = 0; i < sizeof(gBaseStrPtr); i++, key_index++) {\n" +
-                "            gBaseStrPtr[i] ^= keys[key_index % size_of_keys];\n" +
-                "        }\n" +
-                "    }\n" +
-                "\n" +
-                "    return ((const char *) (gBaseStrPtr + gStringIds[_idx].off)); \n" +
-                "}\n" +
-                //"#define STRING_BY_ID(_idx) ((const char *) (gBaseStrPtr + gStringIds[_idx].off))\n" +
+                "#define STRING_BY_ID(_idx) ((const char *) (gBaseStrPtr + gStringIds[_idx].off))\n" +
                 "\n" +
                 "#define STRING_BY_TYPE_ID(_idx) (STRING_BY_ID(gTypeIds[_idx].idx))\n" +
                 "\n" +
@@ -308,7 +270,7 @@ public class ResolverCodeGenerator {
                         "\n");
     }
 
-    private void generateMethodPool(@NotNull Writer writer) throws IOException {
+    private void generateMethodPool(Writer writer) throws IOException {
         final References references = this.references;
         writer.write(
                 "\n" +
@@ -358,7 +320,7 @@ public class ResolverCodeGenerator {
         writer.write("\n");
     }
 
-    private void generateFieldPool(@NotNull Writer writer) throws IOException {
+    private void generateFieldPool(Writer writer) throws IOException {
         final References references = this.references;
         writer.write(
                 "\n" +
@@ -400,13 +362,12 @@ public class ResolverCodeGenerator {
         writer.write(String.format("static vmField gFields[%d];\n", fieldPool.size()));
     }
 
-    private void generateStringPool(@NotNull Writer writer, byte[] keys) throws IOException {
-        writer.write("static u1 gBaseStrPtr[]={\n");
+
+    private void generateStringPool(Writer writer) throws IOException {
+        writer.write("static const u1 gBaseStrPtr[]={\n");
 
         ArrayList<Long> strOffsets = new ArrayList<>();
         long strOffset = 0;
-
-        long keyIndex = 0;
 
         final List<String> stringPool = references.getStringPool();
         for (String string : stringPool) {
@@ -416,11 +377,9 @@ public class ResolverCodeGenerator {
 
             writer.write("    ");
             for (byte aByte : bytes) {
-                writer.write(String.format("0x%02x,", (aByte ^ keys[(int)(keyIndex % keys.length)]) & 0xFF));
-                ++keyIndex;
+                writer.write(String.format("0x%02x,", aByte & 0xFF));
             }
-            writer.write(String.format("0x%02x,\n", (keys[(int) (keyIndex % keys.length)]) & 0xFF));
-            ++keyIndex;
+            writer.write("0x00,\n");
 
             strOffsets.add(strOffset);
             strOffset += bytes.length + 1;
@@ -446,7 +405,16 @@ public class ResolverCodeGenerator {
         writer.flush();
     }
 
-    private void generateTypePool(@NotNull Writer writer) throws IOException {
+    static String stringEsc(String str) throws UTFDataFormatException {
+        byte[] bytes = ModifiedUtf8.encode(str);
+        StringBuilder sb = new StringBuilder(4 * bytes.length);
+        for (byte b : bytes) {
+            sb.append(String.format("\\x%02x", b & 0xFF));
+        }
+        return sb.toString();
+    }
+
+    private void generateTypePool(Writer writer) throws IOException {
 
         writer.write(
                 "\n" +
@@ -465,7 +433,7 @@ public class ResolverCodeGenerator {
     }
 
     //根据类型池,去掉L开头和;得到class name,其他则不变
-    private void generateClassNamePool(@NotNull Writer writer) throws IOException {
+    private void generateClassNamePool(Writer writer) throws IOException {
         writer.write(
                 "\n" +
                         "typedef struct {\n" +
@@ -488,7 +456,7 @@ public class ResolverCodeGenerator {
         writer.write("//ends class name ids\n\n");
     }
 
-    private void generateSignaturePool(@NotNull Writer writer) throws IOException {
+    private void generateSignaturePool(Writer writer) throws IOException {
         writer.write(
                 "typedef struct {\n" +
                         "    u4 idx;\n" +

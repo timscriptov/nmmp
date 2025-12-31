@@ -1,9 +1,10 @@
 package com.nmmedit.apkprotect.aar.asm;
 
-import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+
+import javax.annotation.Nonnull;
 
 /**
  * 在原class插入初始化代码
@@ -24,26 +25,6 @@ public class InjectStaticBlockVisitor extends ClassVisitor {
         this.typeName = typeName;
         this.methodName = methodName;
         this.classIdx = classIdx;
-    }
-
-    // NativeUtils.classesInit(idx);
-    // 方法签名固定为(I)V,就类名跟方法名可变
-    private static void genCallClassesInit(@NotNull MethodVisitor mv,
-                                           String clsName,
-                                           String initMethodName,
-                                           int idx) {
-        //选择更适合的索引加载指令
-        if (idx < 0) {//unsigned int
-            mv.visitLdcInsn(idx);
-        } else if (idx <= Byte.MAX_VALUE) {
-            mv.visitIntInsn(Opcodes.BIPUSH, idx);
-        } else if (idx <= Short.MAX_VALUE) {
-            mv.visitIntInsn(Opcodes.SIPUSH, idx);
-        } else {
-            mv.visitLdcInsn(idx);
-        }
-        //调用classesInit方法
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, clsName, initMethodName, "(I)V", false);
     }
 
     @Override
@@ -80,5 +61,25 @@ public class InjectStaticBlockVisitor extends ClassVisitor {
                 }
             }
         }
+    }
+
+    // NativeUtils.classesInit(idx);
+    // 方法签名固定为(I)V,就类名跟方法名可变
+    private static void genCallClassesInit(@Nonnull MethodVisitor mv,
+                                           String clsName,
+                                           String initMethodName,
+                                           int idx) {
+        //选择更适合的索引加载指令
+        if (idx < 0) {//unsigned int
+            mv.visitLdcInsn(idx);
+        } else if (idx <= Byte.MAX_VALUE) {
+            mv.visitIntInsn(Opcodes.BIPUSH, idx);
+        } else if (idx <= Short.MAX_VALUE) {
+            mv.visitIntInsn(Opcodes.SIPUSH, idx);
+        } else {
+            mv.visitLdcInsn(idx);
+        }
+        //调用classesInit方法
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, clsName, initMethodName, "(I)V", false);
     }
 }

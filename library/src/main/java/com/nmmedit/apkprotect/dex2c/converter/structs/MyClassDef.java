@@ -1,14 +1,15 @@
 package com.nmmedit.apkprotect.dex2c.converter.structs;
 
+
 import com.android.tools.smali.dexlib2.base.reference.BaseTypeReference;
 import com.android.tools.smali.dexlib2.iface.Annotation;
 import com.android.tools.smali.dexlib2.iface.ClassDef;
 import com.android.tools.smali.dexlib2.iface.Field;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.google.common.collect.Iterators;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.AbstractCollection;
 import java.util.Iterator;
 import java.util.List;
@@ -16,23 +17,23 @@ import java.util.Set;
 
 
 public class MyClassDef extends BaseTypeReference implements ClassDef {
-    @NotNull
+    @Nonnull
     private final ClassDef classDef;
-    @NotNull
+    @Nonnull
     private final List<? extends Method> directMethods;
-    @NotNull
+    @Nonnull
     private final List<? extends Method> virtualMethods;
 
 
-    public MyClassDef(@NotNull ClassDef classDef,
-                      @NotNull List<? extends Method> directMethods,
-                      @NotNull List<? extends Method> virtualMethods) {
+    public MyClassDef(@Nonnull ClassDef classDef,
+                      @Nonnull List<? extends Method> directMethods,
+                      @Nonnull List<? extends Method> virtualMethods) {
         this.classDef = classDef;
         this.directMethods = directMethods;
         this.virtualMethods = virtualMethods;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public String getType() {
         return classDef.getType();
@@ -49,7 +50,7 @@ public class MyClassDef extends BaseTypeReference implements ClassDef {
         return classDef.getSuperclass();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public List<String> getInterfaces() {
         return classDef.getInterfaces();
@@ -61,48 +62,48 @@ public class MyClassDef extends BaseTypeReference implements ClassDef {
         return null;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Set<? extends Annotation> getAnnotations() {
         return classDef.getAnnotations();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getStaticFields() {
         return classDef.getStaticFields();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getInstanceFields() {
         return classDef.getInstanceFields();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Field> getFields() {
         return classDef.getFields();
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getDirectMethods() {
         return directMethods;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getVirtualMethods() {
         return virtualMethods;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterable<? extends Method> getMethods() {
 //        return Iterables.concat(directMethods, virtualMethods);
         return new AbstractCollection<Method>() {
-            @NotNull
+            @Nonnull
             @Override
             public Iterator<Method> iterator() {
                 return Iterators.concat(directMethods.iterator(), virtualMethods.iterator());

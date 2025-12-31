@@ -1,19 +1,20 @@
 package com.nmmedit.apkprotect.util;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.UTFDataFormatException;
 
 //来自java.nio.charset.ModifiedUtf8
 public class ModifiedUtf8 {
-    private ModifiedUtf8() {
-    }
-
     /**
      * Decodes a byte array containing <i>modified UTF-8</i> bytes into a string.
      *
      * <p>Note that although this method decodes the (supposedly impossible) zero byte to U+0000,
      * that's what the RI does too.
      */
-    public static String decode(byte[] in, char[] out, int offset, int utfSize) throws UTFDataFormatException {
+    @Contract("_, _, _, _ -> new")
+    public static @NotNull String decode(byte[] in, char[] out, int offset, int utfSize) throws UTFDataFormatException {
         int count = 0, s = 0, a;
         while (count < utfSize) {
             if ((out[s] = (char) in[offset + count++]) < '\u0080') {
@@ -51,7 +52,7 @@ public class ModifiedUtf8 {
      * as two, four, or even eight bytes. If {@code shortLength} is true, we'll throw an
      * exception if the string is too long for its length to be represented by a short.
      */
-    public static long countBytes(String s, boolean shortLength) throws UTFDataFormatException {
+    public static long countBytes(@NotNull String s, boolean shortLength) throws UTFDataFormatException {
         long result = 0;
         final int length = s.length();
         for (int i = 0; i < length; ++i) {
@@ -74,7 +75,7 @@ public class ModifiedUtf8 {
      * Encodes the <i>modified UTF-8</i> bytes corresponding to string {@code s} into the
      * byte array {@code dst}, starting at the given {@code offset}.
      */
-    public static void encode(byte[] dst, int offset, String s) {
+    public static void encode(byte[] dst, int offset, @NotNull String s) {
         final int length = s.length();
         for (int i = 0; i < length; i++) {
             char ch = s.charAt(i);
@@ -96,10 +97,13 @@ public class ModifiedUtf8 {
      * Throws UTFDataFormatException if {@code s} is too long
      * for a two-byte length.
      */
-    public static byte[] encode(String s) throws UTFDataFormatException {
+    public static byte @NotNull [] encode(String s) throws UTFDataFormatException {
         int utfCount = (int) ModifiedUtf8.countBytes(s, true);
         byte[] result = new byte[utfCount];
         ModifiedUtf8.encode(result, 0, s);
         return result;
+    }
+
+    private ModifiedUtf8() {
     }
 }

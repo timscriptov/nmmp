@@ -2,20 +2,19 @@ import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
+    alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.jetbrainsCompose)
-    alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.composeHotReload)
 }
 
 kotlin {
-    jvm("desktop") {
-        jvmToolchain(17)
+    jvm() {
         withJava()
     }
-    
+
     sourceSets {
-        val desktopMain by getting
-        
         commonMain.dependencies {
             implementation(project(":library"))
 
@@ -23,18 +22,22 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
-            @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
 
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.2")
 
-            implementation("com.github.timscriptov:preferences:1.0.4")
-
             implementation("org.slf4j:slf4j-simple:1.6.1")
         }
-        desktopMain.dependencies {
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+        jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.kotlinx.coroutinesSwing)
         }
     }
 }
@@ -44,10 +47,10 @@ compose.desktop {
         mainClass = "MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "nmmp"
-            packageVersion = "1.3.0"
-            description = "Android APK Protector"
-            copyright = "© 2023 timscriptov."
+            packageName = "com.mcal.nmmp"
+            packageVersion = "1.4.0"
+            description = "Android DEX Protector"
+            copyright = "© 2023-2026 timscriptov."
             vendor = "timscriptov"
         }
         buildTypes.release.proguard {

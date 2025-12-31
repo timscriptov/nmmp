@@ -1,9 +1,5 @@
 package com.nmmedit.apkprotect.deobfus;
 
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
@@ -21,8 +17,7 @@ public class MappingReader {
         this.mappingFile = null;
     }
 
-    @Contract(" -> new")
-    private @NotNull Reader getMappingReader() throws IOException {
+    private Reader getMappingReader() throws IOException {
         if (mappingFile != null) {
             return new FileReader(mappingFile);
         }
@@ -57,8 +52,8 @@ public class MappingReader {
      * results with the given mapping processor. Returns the old class name,
      * or null if any subsequent class member lines can be ignored.
      */
-    private @Nullable String processClassMapping(@NotNull String line,
-                                                 MappingProcessor mappingProcessor) {
+    private String processClassMapping(String line,
+                                       MappingProcessor mappingProcessor) {
         // See if we can parse "___ -> ___:", containing the original
         // class name and the new class name.
 
@@ -87,7 +82,7 @@ public class MappingReader {
      * results with the given mapping processor.
      */
     private void processClassMemberMapping(String className,
-                                           @NotNull String line,
+                                           String line,
                                            MappingProcessor mappingProcessor) {
         // See if we can parse one of
         //     ___ ___ -> ___

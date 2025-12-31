@@ -1,142 +1,89 @@
 package com.nmmedit.apkprotect.data
 
-import com.mcal.preferences.PreferencesManager
-import com.nmmedit.apkprotect.data.Storage.binDir
-import com.nmmedit.apkprotect.util.OsDetector
-
-object Prefs : PreferencesManager(binDir, "nmmp_preferences.json") {
-    @JvmStatic
-    fun isArm(): Boolean {
-        return getBoolean("arm", true)
-    }
+object Prefs {
+    private val config = ConfigManager.instance
 
     @JvmStatic
-    fun setArm(mode: Boolean) {
-        putBoolean("arm", mode)
-    }
+    var isArm: Boolean
+        get() = config.getBoolean("abi.armeabi-v7a", true)
+        set(value) {
+            config.edit().putBoolean("abi.armeabi-v7a", value).apply()
+        }
 
     @JvmStatic
-    fun isArm64(): Boolean {
-        return getBoolean("arm64", true)
-    }
+    var isArm64: Boolean
+        get() = config.getBoolean("abi.arm64-v8a", true)
+        set(value) {
+            config.edit().putBoolean("abi.arm64-v8a", value).apply()
+        }
 
     @JvmStatic
-    fun setArm64(mode: Boolean) {
-        putBoolean("arm64", mode)
-    }
+    var isX86: Boolean
+        get() = config.getBoolean("abi.x86", true)
+        set(value) {
+            config.edit().putBoolean("abi.x86", value).apply()
+        }
 
     @JvmStatic
-    fun isX86(): Boolean {
-        return getBoolean("x86", true)
-    }
+    var isX64: Boolean
+        get() = config.getBoolean("abi.x86_64", true)
+        set(value) {
+            config.edit().putBoolean("abi.x86_64", value).apply()
+        }
 
     @JvmStatic
-    fun setX86(mode: Boolean) {
-        putBoolean("x86", mode)
-    }
+    var rulesPath: String
+        get() = config.getString("app.rules_path")
+        set(value) {
+            config.edit().putString("app.rules_path", value).apply()
+        }
 
     @JvmStatic
-    fun isX64(): Boolean {
-        return getBoolean("x64", true)
-    }
+    var mappingPath: String
+        get() = config.getString("app.mapping_path")
+        set(value) {
+            config.edit().putString("app.mapping_path", value).apply()
+        }
 
     @JvmStatic
-    fun setX64(mode: Boolean) {
-        putBoolean("x64", mode)
-    }
+    var sdkPath: String
+        get() = config.getString("environment.sdk_path")
+        set(value) {
+            config.edit().putString("environment.sdk_path", value).apply()
+        }
 
     @JvmStatic
-    fun getVmName(): String {
-        return getString("vm_name", "nmmvm")
-    }
+    var cmakePath: String
+        get() = config.getString("environment.cmake_path")
+        set(value) {
+            config.edit().putString("environment.cmake_path", value).apply()
+        }
 
     @JvmStatic
-    fun setVmName(name: String) {
-        putString("vm_name", name)
-    }
+    var ndkPath: String
+        get() = config.getString("environment.ndk_path")
+        set(value) {
+            config.edit().putString("environment.ndk_path", value).apply()
+        }
 
     @JvmStatic
-    fun getNmmpName(): String {
-        return getString("nmmp_name", "nmmp")
-    }
+    var ndkToolchains: String
+        get() = config.getString("environment.ndk_toolchains")
+        set(value) {
+            config.edit().putString("environment.ndk_toolchains", value).apply()
+        }
 
     @JvmStatic
-    fun setNmmpName(name: String) {
-        putString("nmmp_name", name)
-    }
+    var ndkAbi: String
+        get() = config.getString("environment.ndk_abi")
+        set(value) {
+            config.edit().putString("environment.ndk_abi", value).apply()
+        }
 
     @JvmStatic
-    fun setCxxFlags(flags: String) {
-        putString("cxx_flags", flags)
-    }
-
-    @JvmStatic
-    fun getCxxFlags(): String {
-        return getString("cxx_flags", "")
-    }
-
-    @JvmStatic
-    fun getRegisterNativesClassName(): String {
-        return getString(
-            "register_natives_class_name",
-            "com/nmmedit/protect/NativeUtil"
-        )
-    }
-
-    @JvmStatic
-    fun setRegisterNativesClassName(path: String) {
-        putString("register_natives_class_name", path)
-    }
-
-    @JvmStatic
-    fun getSdkPath(): String {
-        return getString("sdk_path", System.getenv("ANDROID_SDK_HOME") ?: "")
-    }
-
-    @JvmStatic
-    fun setSdkPath(path: String) {
-        putString("sdk_path", path)
-    }
-
-    @JvmStatic
-    fun getCmakePath(): String {
-        return getString("cmake_path", System.getenv("CMAKE_PATH") ?: "")
-    }
-
-    @JvmStatic
-    fun setCmakePath(path: String) {
-        putString("cmake_path", path)
-    }
-
-    @JvmStatic
-    fun getNdkPath(): String {
-        return getString("ndk_path", System.getenv("ANDROID_NDK_HOME") ?: "")
-    }
-
-    @JvmStatic
-    fun setNdkPath(path: String) {
-        putString("ndk_path", path)
-    }
-
-    @JvmStatic
-    fun getNdkToolchains(): String {
-        return getString("toolchains", "/toolchains/llvm/prebuilt/")
-    }
-
-    @JvmStatic
-    fun getNdkAbi(): String {
-        return getString(
-            "abi",
-            if (OsDetector.isWindows) {
-                "windows-x86_64"
-            } else {
-                "linux-x86_64"
-            }
-        )
-    }
-
-    @JvmStatic
-    fun getNdkStrip(): String {
-        return getString("strip", "/bin/llvm-strip")
-    }
+    var ndkStrip: String
+        get() = config.getString("environment.ndk_strip")
+        set(value) {
+            config.edit().putString("environment.ndk_strip", value).apply()
+        }
 }
