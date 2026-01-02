@@ -79,4 +79,11 @@ object Prefs {
         set(value) {
             config.edit().putString("environment.ndk_strip_binary_path", value).apply()
         }
+
+    @JvmStatic
+    var cxxFlags: String
+        get() = config.getString("cmake.cxx_flags", "-fvisibility=hidden")
+        set(value) {
+            config.edit().putString("cmake.cxx_flags", value).apply()
+        }
 }

@@ -13,6 +13,7 @@ data class MainScreenState(
     val isArm64: Boolean = true,
     val isX86: Boolean = true,
     val isX64: Boolean = true,
+    val cxxFlags: String = "",
     val validationErrors: Map<FieldType, String> = emptyMap(),
 ) {
     fun isAllValid(): Boolean {

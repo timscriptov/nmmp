@@ -36,6 +36,7 @@ class MainViewModel(
             ndkFilePath = Prefs.ndkPath,
             cMakeFilePath = Prefs.cmakePath,
             ndkStripBinaryFilePath = Prefs.ndkStripBinary,
+            cxxFlags = Prefs.cxxFlags,
         )
     )
     val screenState = _screenState.asStateFlow()
@@ -43,7 +44,6 @@ class MainViewModel(
     private val inputFilePath: String get() = _screenState.value.inputFilePath
     private val rulesPath: String get() = _screenState.value.rulesFilePath
     private val mappingPath: String get() = _screenState.value.mappingFilePath
-    private val ndkStripBinaryPath: String get() = _screenState.value.ndkStripBinaryFilePath
 
     init {
         validateAll()
@@ -104,6 +104,15 @@ class MainViewModel(
             it.copy(
                 cMakeFilePath = path.replace("\"", ""),
                 validationErrors = validateField(path, FieldType.CMAKE_DIRECTORY)
+            )
+        }
+    }
+
+    fun setCxxFlags(flags: String) {
+        Prefs.cxxFlags = flags
+        _screenState.update {
+            it.copy(
+                cxxFlags = flags,
             )
         }
     }

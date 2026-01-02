@@ -19,8 +19,8 @@ public class BuildNativeLib {
     //虚拟机库名称,如果cmake里配置为静态库,这个可以忽略
     public static final String VM_NAME = "nmmvm";
 
-    public static Map<String, Map<File, File>> generateNativeLibs(@Nonnull File outDir,
-                                                                  @Nonnull final List<String> abis) throws IOException {
+    public static @NotNull Map<String, Map<File, File>> generateNativeLibs(@Nonnull File outDir,
+                                                                           @Nonnull final List<String> abis) throws IOException {
         String cmakePath = System.getenv("CMAKE_PATH");
         if (isEmpty(cmakePath)) {
             System.err.println("No CMAKE_PATH");
@@ -58,12 +58,12 @@ public class BuildNativeLib {
     }
 
     private static boolean isEmpty(String s) {
-        return s == null || "".equals(s);
+        return s == null || s.isEmpty();
     }
 
 
     //编译出native lib，同时返回最后的so文件
-    public static Map<File, File> build(@NotNull CMakeOptions options) throws IOException {
+    public static @NotNull Map<File, File> build(@NotNull CMakeOptions options) throws IOException {
 
         final List<String> cmakeArguments = options.getCmakeArguments();
         //cmake

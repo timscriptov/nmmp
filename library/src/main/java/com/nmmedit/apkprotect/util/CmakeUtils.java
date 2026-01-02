@@ -1,6 +1,7 @@
 package com.nmmedit.apkprotect.util;
 
 import com.nmmedit.apkprotect.BuildNativeLib;
+import com.nmmedit.apkprotect.data.Prefs;
 import com.nmmedit.apkprotect.dex2c.converter.instructionrewriter.InstructionRewriter;
 import com.nmmedit.apkprotect.sign.ApkVerifyCodeGenerator;
 import org.jetbrains.annotations.NotNull;
@@ -65,7 +66,7 @@ public class CmakeUtils {
         }
     }
 
-    public static void writeCmakeFile(@NotNull File cmakeTemp, @NotNull String libName) throws IOException {
+    public static void writeCmakeFile(@NotNull File cmakeTemp, @NotNull String libName, @NotNull String cxxFlags) throws IOException {
         final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(cmakeTemp), StandardCharsets.UTF_8));
 
@@ -75,6 +76,9 @@ public class CmakeUtils {
 
         //替换原本libname
         lines = lines.replaceAll(String.format(libNameFormat, "nmmp"), String.format(libNameFormat, libName));
+
+        //额外FLAGS
+        lines = lines.replaceAll("-fvisibility=hidden", cxxFlags);
 
         try (FileWriter fileWriter = new FileWriter(cmakeTemp)) {
             fileWriter.write(lines);
@@ -104,7 +108,7 @@ public class CmakeUtils {
                 writeOpcodeHeaderFile(source, instructionRewriter);
             } else if (source.getName().equals("CMakeLists.txt")) {
                 //处理cmake里配置的本地库名
-                writeCmakeFile(source, BuildNativeLib.NMMP_NAME);
+                writeCmakeFile(source, BuildNativeLib.NMMP_NAME, Prefs.getCxxFlags());
             } else if (source.getName().endsWith("vm.h")) {
                 writeRandomResolver(source);
             } else if (source.getName().endsWith("JNIWrapper.h")) {
