@@ -1,32 +1,49 @@
 package com.nmmedit.apkprotect.data
 
 import com.nmmedit.apkprotect.util.FileUtils
-import com.nmmedit.apkprotect.util.OsDetector
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 class ConfigManager private constructor() {
     companion object {
-        private const val CONFIG_FILENAME_LINUX = "config.txt"
-        private const val CONFIG_FILENAME_WINDOWS = "config-windows.txt"
+        private const val CONFIG_FILENAME = "config.txt"
+        private const val CONFIG_DIR_NAME = "tools"
+        private const val COMMENT_PREFIX = "#"
+        private const val LINE_COMMENT_PREFIX = "//"
 
         val instance: ConfigManager by lazy { ConfigManager() }
     }
 
     private val configFileName: String
-        get() = if (OsDetector.isWindows()) CONFIG_FILENAME_WINDOWS else CONFIG_FILENAME_LINUX
+        get() = CONFIG_FILENAME
+
+    private val configDirPath: String
+        get() = File(FileUtils.getHomePath(), CONFIG_DIR_NAME).absolutePath
 
     private val configFilePath: String
-        get() = File(FileUtils.getHomePath(), "tools/${configFileName}").absolutePath
+        get() = File(configDirPath, configFileName).absolutePath
 
     @Volatile
     private var configCache: Map<String, String>? = null
 
     private val editor: Editor by lazy { Editor() }
+
+    init {
+        ensureConfigDirectoryExists()
+    }
+
+    private fun ensureConfigDirectoryExists() {
+        try {
+            val configDir = File(configDirPath)
+            if (!configDir.exists()) {
+                configDir.mkdirs()
+            }
+        } catch (e: Exception) {
+            println("Warning: Could not create config directory: ${e.message}")
+        }
+    }
 
     fun string(key: String, defaultValue: String = ""): ReadWriteProperty<Any?, String> =
         ConfigProperty(key, defaultValue)
@@ -50,28 +67,41 @@ class ConfigManager private constructor() {
         getConfigValue(key, defaultValue)
 
     fun getBoolean(key: String, defaultValue: Boolean = false): Boolean =
-        getConfigValue(key, defaultValue.toString()).toBooleanStrictOrNull() ?: defaultValue
+        getConfigValue(key, defaultValue.toString())
+            .takeIf { it.isNotBlank() }
+            ?.toBooleanStrictOrNull()
+            ?: defaultValue
 
     fun getInt(key: String, defaultValue: Int = 0): Int =
-        getConfigValue(key, defaultValue.toString()).toIntOrNull() ?: defaultValue
+        getConfigValue(key, defaultValue.toString())
+            .takeIf { it.isNotBlank() }
+            ?.toIntOrNull()
+            ?: defaultValue
 
     fun getLong(key: String, defaultValue: Long = 0L): Long =
-        getConfigValue(key, defaultValue.toString()).toLongOrNull() ?: defaultValue
+        getConfigValue(key, defaultValue.toString())
+            .takeIf { it.isNotBlank() }
+            ?.toLongOrNull()
+            ?: defaultValue
 
     fun getFloat(key: String, defaultValue: Float = 0f): Float =
-        getConfigValue(key, defaultValue.toString()).toFloatOrNull() ?: defaultValue
+        getConfigValue(key, defaultValue.toString())
+            .takeIf { it.isNotBlank() }
+            ?.toFloatOrNull()
+            ?: defaultValue
 
     fun getStringSet(key: String, defaultValue: Set<String> = emptySet()): Set<String> =
-        getConfigValue(key, "").takeIf { it.isNotBlank() }
+        getConfigValue(key, "")
+            .takeIf { it.isNotBlank() }
             ?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotBlank() }
             ?.toSet()
             ?: defaultValue
 
-    fun contains(key: String): Boolean = key in loadConfig()
+    fun contains(key: String): Boolean = key in safeLoadConfig()
 
-    fun getAll(): Map<String, *> = loadConfig()
+    fun getAll(): Map<String, String> = safeLoadConfig()
 
     fun edit(): Editor = editor
 
@@ -122,12 +152,12 @@ class ConfigManager private constructor() {
             return try {
                 synchronized(this@ConfigManager) {
                     val configFile = File(configFilePath)
-                    ensureConfigFileExists(configFile)
+                    if (!configFile.exists()) {
+                        configFile.createNewFile()
+                    }
 
-                    // Загружаем текущую конфигурацию
-                    val config = loadConfig().toMutableMap()
+                    val config = safeLoadConfig().toMutableMap()
 
-                    // Применяем изменения
                     edits.forEach { (key, value) ->
                         when (value) {
                             null -> config.remove(key)
@@ -136,28 +166,36 @@ class ConfigManager private constructor() {
                         }
                     }
 
-                    // Сохраняем в файл
                     saveConfigToFile(configFile, config)
-
-                    // Обновляем кэш
                     configCache = config
-
-                    // Очищаем правки
                     edits.clear()
                 }
                 true
             } catch (e: Exception) {
+                println("Error committing config changes: ${e.message}")
                 e.printStackTrace()
                 false
             }
         }
 
         fun apply() {
-            commit()
+            try {
+                commit()
+            } catch (e: Exception) {
+                println("Error applying config changes: ${e.message}")
+            }
         }
     }
 
-    // Внутренние методы
+    private fun safeLoadConfig(): Map<String, String> {
+        return try {
+            loadConfig()
+        } catch (e: Exception) {
+            println("Error loading config, returning empty map: ${e.message}")
+            emptyMap()
+        }
+    }
+
     private fun loadConfig(): Map<String, String> {
         return configCache ?: synchronized(this) {
             configCache ?: loadConfigInternal().also { configCache = it }
@@ -166,63 +204,74 @@ class ConfigManager private constructor() {
 
     private fun loadConfigInternal(): Map<String, String> {
         val configFile = File(configFilePath)
-        ensureConfigFileExists(configFile)
-        return parseConfigFile(configFile)
-    }
 
-    private fun ensureConfigFileExists(configFile: File) {
-        if (configFile.exists()) return
+        if (!configFile.exists()) {
+            return emptyMap()
+        }
 
-        configFile.parentFile?.mkdirs()
-        try {
-            Prefs::class.java.getResourceAsStream("/$configFileName")?.use { inputStream ->
-                FileOutputStream(configFile).use { outputStream ->
-                    FileUtils.copyStream(inputStream, outputStream)
-                }
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
+        if (!configFile.canRead()) {
+            println("Config file is not readable: $configFilePath")
+            return emptyMap()
+        }
+
+        return try {
+            parseConfigFile(configFile)
+        } catch (e: Exception) {
+            println("Error parsing config file: ${e.message}")
+            emptyMap()
         }
     }
 
     private fun parseConfigFile(configFile: File): Map<String, String> {
         val config = mutableMapOf<String, String>()
-        try {
-            configFile.forEachLine { line ->
-                val trimmedLine = line.trim()
-                when {
-                    trimmedLine.isEmpty() -> return@forEachLine
-                    trimmedLine.startsWith("#") -> return@forEachLine
-                    trimmedLine.startsWith("//") -> return@forEachLine
-                    else -> {
-                        val equalsIndex = trimmedLine.indexOf('=')
-                        if (equalsIndex > 0) {
-                            val key = trimmedLine.substring(0, equalsIndex).trim()
-                            val value = trimmedLine.substring(equalsIndex + 1).trim()
-                            config[key] = value
+
+        configFile.useLines { lines ->
+            lines.forEachIndexed { index, line ->
+                try {
+                    val trimmedLine = line.trim()
+                    when {
+                        trimmedLine.isEmpty() -> return@forEachIndexed
+                        trimmedLine.startsWith(COMMENT_PREFIX) -> return@forEachIndexed
+                        trimmedLine.startsWith(LINE_COMMENT_PREFIX) -> return@forEachIndexed
+                        else -> {
+                            val equalsIndex = trimmedLine.indexOf('=')
+                            if (equalsIndex > 0) {
+                                val key = trimmedLine.substring(0, equalsIndex).trim()
+                                val value = trimmedLine.substring(equalsIndex + 1).trim()
+                                if (key.isNotBlank()) {
+                                    config[key] = value
+                                }
+                            } else {
+                                println("Warning: Invalid config line ${index + 1}: '$line'")
+                            }
                         }
                     }
+                } catch (e: Exception) {
+                    println("Warning: Error parsing line ${index + 1}: ${e.message}")
                 }
             }
-        } catch (e: IOException) {
-            throw RuntimeException("Load config failed", e)
         }
+
         return config
     }
 
     private fun getConfigValue(key: String, defaultValue: String = ""): String {
-        val config = loadConfig()
-        return config[key] ?: defaultValue
+        return try {
+            val config = safeLoadConfig()
+            config[key] ?: defaultValue
+        } catch (e: Exception) {
+            println("Error getting config value for key '$key': ${e.message}")
+            defaultValue
+        }
     }
 
     private fun saveConfigToFile(configFile: File, config: Map<String, String>) {
         try {
-            configFile.bufferedWriter().use { writer ->
+            val tempFile = File(configFile.parent, "${configFile.name}.tmp")
+            tempFile.bufferedWriter().use { writer ->
                 val linesToPreserve = mutableListOf<String>()
                 val existingKeys = mutableSetOf<String>()
-
-                // Читаем и обрабатываем существующий файл
-                if (configFile.exists()) {
+                if (configFile.exists() && configFile.canRead()) {
                     configFile.forEachLine { line ->
                         val trimmedLine = line.trim()
                         when {
@@ -230,7 +279,7 @@ class ConfigManager private constructor() {
                                 linesToPreserve.add(line)
                             }
 
-                            trimmedLine.startsWith("#") || trimmedLine.startsWith("//") -> {
+                            trimmedLine.startsWith(COMMENT_PREFIX) || trimmedLine.startsWith(LINE_COMMENT_PREFIX) -> {
                                 linesToPreserve.add(line)
                             }
 
@@ -241,9 +290,6 @@ class ConfigManager private constructor() {
                                     existingKeys.add(key)
                                     config[key]?.let { value ->
                                         linesToPreserve.add("$key=$value")
-                                    } ?: run {
-                                        // Удаляем строки с удаленными ключами
-                                        // Не добавляем их в linesToPreserve
                                     }
                                 } else {
                                     linesToPreserve.add(line)
@@ -253,13 +299,11 @@ class ConfigManager private constructor() {
                     }
                 }
 
-                // Добавляем новые ключи
                 val newKeys = config.keys - existingKeys
                 if (newKeys.isNotEmpty()) {
-                    if (linesToPreserve.isNotEmpty() && !linesToPreserve.last().isBlank()) {
+                    if (linesToPreserve.isNotEmpty() && linesToPreserve.last().isNotBlank()) {
                         linesToPreserve.add("")
                     }
-                    linesToPreserve.add("# Added automatically")
                     newKeys.sorted().forEach { key ->
                         config[key]?.let { value ->
                             linesToPreserve.add("$key=$value")
@@ -269,9 +313,20 @@ class ConfigManager private constructor() {
 
                 writer.write(linesToPreserve.joinToString("\n"))
             }
-        } catch (e: IOException) {
+
+            if (configFile.exists()) {
+                configFile.delete()
+            }
+            tempFile.renameTo(configFile)
+
+        } catch (e: Exception) {
+            println("Error saving config file: ${e.message}")
             throw RuntimeException("Save config failed", e)
         }
+    }
+
+    internal fun clearCache() {
+        configCache = null
     }
 
     private inner class ConfigProperty<T>(
@@ -279,29 +334,38 @@ class ConfigManager private constructor() {
         private val defaultValue: T
     ) : ReadWriteProperty<Any?, T> {
         override fun getValue(thisRef: Any?, property: KProperty<*>): T {
-            return when (defaultValue) {
-                is String -> getString(key, defaultValue as String) as T
-                is Boolean -> getBoolean(key, defaultValue as Boolean) as T
-                is Int -> getInt(key, defaultValue as Int) as T
-                is Long -> getLong(key, defaultValue as Long) as T
-                is Float -> getFloat(key, defaultValue as Float) as T
-                is Set<*> -> getStringSet(key, defaultValue as Set<String>) as T
-                else -> throw IllegalArgumentException("Unsupported type")
+            return try {
+                when (defaultValue) {
+                    is String -> getString(key, defaultValue as String) as T
+                    is Boolean -> getBoolean(key, defaultValue as Boolean) as T
+                    is Int -> getInt(key, defaultValue as Int) as T
+                    is Long -> getLong(key, defaultValue as Long) as T
+                    is Float -> getFloat(key, defaultValue as Float) as T
+                    is Set<*> -> getStringSet(key, defaultValue as Set<String>) as T
+                    else -> throw IllegalArgumentException("Unsupported type: $defaultValue")
+                }
+            } catch (e: Exception) {
+                println("Error getting property '$key': ${e.message}")
+                defaultValue
             }
         }
 
         override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
-            edit().apply {
-                when (value) {
-                    is String -> putString(key, value)
-                    is Boolean -> putBoolean(key, value)
-                    is Int -> putInt(key, value)
-                    is Long -> putLong(key, value)
-                    is Float -> putFloat(key, value)
-                    is Set<*> -> putStringSet(key, value as Set<String>)
-                    else -> throw IllegalArgumentException("Unsupported type")
-                }
-            }.apply()
+            try {
+                edit().apply {
+                    when (value) {
+                        is String -> putString(key, value)
+                        is Boolean -> putBoolean(key, value)
+                        is Int -> putInt(key, value)
+                        is Long -> putLong(key, value)
+                        is Float -> putFloat(key, value)
+                        is Set<*> -> putStringSet(key, value as Set<String>)
+                        else -> throw IllegalArgumentException("Unsupported type: $value")
+                    }
+                }.apply()
+            } catch (e: Exception) {
+                println("Error setting property '$key': ${e.message}")
+            }
         }
     }
 }

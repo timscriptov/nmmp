@@ -1,7 +1,14 @@
 package com.nmmedit.apkprotect.data
 
+import com.nmmedit.apkprotect.util.OsDetector
+
 object Prefs {
     private val config = ConfigManager.instance
+    private val stripPath = if (OsDetector.isWindows()) {
+        "/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-strip"
+    } else {
+        "/toolchains/llvm/prebuilt/linux-x86_64//bin/llvm-strip"
+    }
 
     @JvmStatic
     var isArm: Boolean
@@ -47,43 +54,29 @@ object Prefs {
 
     @JvmStatic
     var sdkPath: String
-        get() = config.getString("environment.sdk_path")
+        get() = config.getString("environment.sdk_path", System.getenv("ANDROID_SDK_HOME") ?: "")
         set(value) {
             config.edit().putString("environment.sdk_path", value).apply()
         }
 
     @JvmStatic
     var cmakePath: String
-        get() = config.getString("environment.cmake_path")
+        get() = config.getString("environment.cmake_path", System.getenv("CMAKE_PATH") ?: "")
         set(value) {
             config.edit().putString("environment.cmake_path", value).apply()
         }
 
     @JvmStatic
     var ndkPath: String
-        get() = config.getString("environment.ndk_path")
+        get() = config.getString("environment.ndk_path", System.getenv("ANDROID_NDK_HOME") ?: "")
         set(value) {
             config.edit().putString("environment.ndk_path", value).apply()
         }
 
     @JvmStatic
-    var ndkToolchains: String
-        get() = config.getString("environment.ndk_toolchains")
+    var ndkStripBinary: String
+        get() = config.getString("environment.ndk_strip_binary_path", ndkPath.ifEmpty { "NDK_PATH" } + stripPath)
         set(value) {
-            config.edit().putString("environment.ndk_toolchains", value).apply()
-        }
-
-    @JvmStatic
-    var ndkAbi: String
-        get() = config.getString("environment.ndk_abi")
-        set(value) {
-            config.edit().putString("environment.ndk_abi", value).apply()
-        }
-
-    @JvmStatic
-    var ndkStrip: String
-        get() = config.getString("environment.ndk_strip")
-        set(value) {
-            config.edit().putString("environment.ndk_strip", value).apply()
+            config.edit().putString("environment.ndk_strip_binary_path", value).apply()
         }
 }
